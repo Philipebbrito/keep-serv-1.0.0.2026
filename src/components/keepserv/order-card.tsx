@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Clock, MessageSquare, Users } from "lucide-react";
+import { AlertTriangle, ChevronRight, Clock, MessageSquare, Receipt, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKeepServ } from "@/lib/keepserv/store";
 import {
@@ -32,10 +32,12 @@ export function OrderCard({
   order,
   onOpen,
   canAdvance,
+  onPay,
 }: {
   order: Order;
   onOpen: () => void;
   canAdvance: boolean;
+  onPay?: () => void;
 }) {
   const { now, advance } = useKeepServ();
   const urgency = urgencyFor(order, now);
@@ -56,7 +58,17 @@ export function OrderCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-display text-lg leading-none font-semibold">Mesa {order.table}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="font-display text-lg leading-none font-semibold">Mesa {order.table}</p>
+            {order.customerName && (
+              <span
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 truncate max-w-[110px]"
+                title={order.customerName}
+              >
+                {order.customerName}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {order.code} · {order.waiter}
           </p>
@@ -85,9 +97,7 @@ export function OrderCard({
           </li>
         ))}
         {activeItems.length > 3 && (
-          <li className="text-xs text-muted-foreground">
-            + {activeItems.length - 3} outros itens
-          </li>
+          <li className="text-xs text-muted-foreground">+ {activeItems.length - 3} outros itens</li>
         )}
       </ul>
 
@@ -127,7 +137,26 @@ export function OrderCard({
             advance(order.id);
           }}
         >
-          Avançar para {next === "preparo" ? "Em preparo" : next === "pronto" ? "Pronto" : "Entregue"}
+          Avançar para{" "}
+          {next === "preparo" ? "Em preparo" : next === "pronto" ? "Pronto" : "Entregue"}
+          <ChevronRight className="size-4" />
+        </Button>
+      ) : null}
+
+      {order.status === "entregue" && onPay ? (
+        <Button
+          variant="default"
+          size="sm"
+          className="mt-3 w-full justify-between bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPay();
+          }}
+        >
+          <span className="flex items-center gap-1.5">
+            <Receipt className="size-4" />
+            Receber pagamento
+          </span>
           <ChevronRight className="size-4" />
         </Button>
       ) : null}

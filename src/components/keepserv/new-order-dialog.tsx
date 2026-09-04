@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORY_LABEL, CATEGORY_ORDER, MENU } from "@/lib/keepserv/menu";
+import { CATEGORY_LABEL, CATEGORY_ORDER, type MenuItem } from "@/lib/keepserv/menu";
+import { getProductStockStatus } from "@/lib/keepserv/stock";
 import { useKeepServ } from "@/lib/keepserv/store";
 import type { OrderItem } from "@/lib/keepserv/types";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ interface DraftItem {
 }
 
 export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { createOrder } = useKeepServ();
+  const { createOrder, products, stockItems } = useKeepServ();
   const [table, setTable] = useState<string>("");
   const [guests, setGuests] = useState<string>("2");
   const [items, setItems] = useState<DraftItem[]>([]);
@@ -38,19 +39,26 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
   const [error, setError] = useState<string | null>(null);
 
   const groupedMenu = useMemo(() => {
-    const byCategory: Record<OrderItem["category"], typeof MENU> = {
+    const byCategory: Record<OrderItem["category"], MenuItem[]> = {
       prato: [],
       entrada: [],
       bebida: [],
       sobremesa: [],
     };
-    for (const item of MENU) {
-      byCategory[item.category].push(item);
+    for (const item of products) {
+      if (item.active !== false) {
+        byCategory[item.category].push(item);
+      }
     }
     return byCategory;
-  }, []);
+  }, [products]);
 
-  const addItem = (menuItem: (typeof MENU)[number]) => {
+  const addItem = (menuItem: MenuItem) => {
+    const stockStatus = getProductStockStatus(menuItem, stockItems);
+    if (!stockStatus.available) {
+      setError(`"${menuItem.name}" está esgotado no estoque.`);
+      return;
+    }
     setItems((prev) => {
       const existing = prev.find((i) => i.name === menuItem.name);
       if (existing) {
@@ -194,19 +202,50 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
                       <div className="grid grid-cols-1 gap-2">
                         {list.map((menuItem) => {
                           const selected = items.find((i) => i.name === menuItem.name);
+                          const stockStatus = getProductStockStatus(menuItem, stockItems);
+                          const isOutOfStock = !stockStatus.available;
+                          const isLowStock = stockStatus.available && stockStatus.lowStock;
+
                           return (
                             <button
                               key={menuItem.id}
+                              disabled={isOutOfStock}
                               onClick={() => addItem(menuItem)}
                               className={cn(
                                 "flex items-center justify-between rounded-lg border border-border bg-card p-2.5 text-left text-sm transition-colors hover:border-accent hover:bg-accent/5",
                                 selected && "border-accent bg-accent/10",
+                                isOutOfStock &&
+                                  "opacity-50 cursor-not-allowed hover:border-border hover:bg-card",
                               )}
                             >
                               <div>
-                                <p className="font-medium">{menuItem.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  R$ {menuItem.price.toFixed(2).replace(".", ",")}
+                                <p className="font-medium flex items-center gap-1.5">
+                                  <span>{menuItem.name}</span>
+                                  {isOutOfStock && (
+                                    <span className="rounded bg-rose-500/15 px-1.5 py-0.2 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                      Esgotado
+                                    </span>
+                                  )}
+                                  {isLowStock && (
+                                    <span className="rounded bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                      {stockStatus.maxPortions !== null
+                                        ? `Restam ${stockStatus.maxPortions}`
+                                        : "Estoque Baixo"}
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                  <span>R$ {menuItem.price.toFixed(2).replace(".", ",")}</span>
+                                  {stockStatus.available && !isLowStock && stockStatus.maxPortions !== null && (
+                                    <span className="text-[11px] text-muted-foreground/70">
+                                      · {stockStatus.maxPortions} disponíveis
+                                    </span>
+                                  )}
+                                  {menuItem.stockConsumption === "recipe" && (
+                                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1 py-0.2 rounded">
+                                      Receita
+                                    </span>
+                                  )}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -215,7 +254,7 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
                                     {selected.qty}x
                                   </span>
                                 ) : null}
-                                <Plus className="size-4 text-muted-foreground" />
+                                {!isOutOfStock && <Plus className="size-4 text-muted-foreground" />}
                               </div>
                             </button>
                           );
@@ -319,11 +358,7 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
                   <p className="text-sm font-medium">Marcar como prioridade</p>
                   <p className="text-xs text-muted-foreground">Destaca o pedido no quadro</p>
                 </div>
-                <Switch
-                  checked={priority}
-                  onCheckedChange={setPriority}
-                  aria-label="Prioridade"
-                />
+                <Switch checked={priority} onCheckedChange={setPriority} aria-label="Prioridade" />
               </div>
             </div>
           </section>

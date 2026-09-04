@@ -1,4 +1,4 @@
-import type { Order, OrderItem } from "./types";
+import type { CashFlowEntry, Order, OrderItem, UserAccount } from "./types";
 
 const MIN = 60_000;
 
@@ -78,10 +78,7 @@ export function buildSeedOrders(now: number): Order[] {
       "preparo",
       38,
       27,
-      [
-        item("Risoto de camarão", 2, 89, "prato"),
-        item("Taça de vinho tinto", 2, 32, "bebida"),
-      ],
+      [item("Risoto de camarão", 2, 89, "prato"), item("Taça de vinho tinto", 2, 32, "bebida")],
       "Mesa comemorando aniversário — servir sobremesa com vela.",
       true,
     ),
@@ -107,6 +104,66 @@ export function buildSeedOrders(now: number): Order[] {
       item("Feijoada individual", 3, 68, "prato"),
       item("Caipirinha de maracujá", 2, 26, "bebida"),
     ]),
+    {
+      ...mk("#1033", 6, 2, "Ana Paula", "pago", 52, 6, [
+        item("Bife de Chorizo 400g", 2, 86, "prato"),
+        item("Batata frita trufada", 1, 38, "entrada"),
+        item("Cerveja Artesanal IPA", 2, 22, "bebida"),
+      ]),
+      payment: {
+        method: "pix",
+        amount: 254.0,
+        splitCount: 2,
+        at: now - 6 * MIN,
+        cashier: "Ana Paula",
+        role: "garcom",
+      },
+    },
+    {
+      ...mk("#1032", 1, 4, "Juliana Rocha", "pago", 85, 24, [
+        item("Risoto de Funghi", 2, 78, "prato"),
+        item("Filé Mignon ao Poivre", 2, 94, "prato"),
+        item("Garrafa Vinho Malbec", 1, 140, "bebida"),
+        item("Panna Cotta de Frutas Vermelhas", 2, 26, "sobremesa"),
+      ]),
+      payment: {
+        method: "credito",
+        amount: 536.0,
+        splitCount: 4,
+        at: now - 24 * MIN,
+        cashier: "Juliana Rocha",
+        role: "garcom",
+      },
+    },
+    {
+      ...mk("#1031", 8, 2, "Ana Paula", "pago", 110, 48, [
+        item("Salada Caesar com Frango", 2, 46, "entrada"),
+        item("Gnocchi aos Quatro Queijos", 2, 64, "prato"),
+        item("Água Mineral sem Gás", 2, 8, "bebida"),
+      ]),
+      payment: {
+        method: "debito",
+        amount: 236.0,
+        splitCount: 1,
+        at: now - 48 * MIN,
+        cashier: "Juliana Reis",
+        role: "caixa",
+      },
+    },
+    {
+      ...mk("#1030", 14, 2, "Carlos Mendes", "pago", 130, 65, [
+        item("Moqueca Mista", 1, 125, "prato"),
+        item("Chopp Pilsen 500ml", 3, 16.5, "bebida"),
+      ]),
+      payment: {
+        method: "dinheiro",
+        amount: 174.5,
+        splitCount: 1,
+        at: now - 65 * MIN,
+        cashier: "Carlos Mendes",
+        role: "garcom",
+      },
+    },
   ];
 
   orders[1]!.messages = [
@@ -194,9 +251,153 @@ export const AVG_TIME_BY_STATION = [
 
 export const TABLES_TOTAL = 24;
 
+export const INITIAL_USERS: UserAccount[] = [
+  {
+    id: "usr-gestor-1",
+    name: "Marcos Tavares",
+    email: "gestor@keepserv.app",
+    phone: "(11) 98123-4567",
+    role: "gestor",
+    password: "keepserv",
+    active: true,
+    createdAt: Date.now() - 60 * 86400000,
+    avatarColor: "bg-indigo-600",
+  },
+  {
+    id: "usr-garcom-1",
+    name: "Ana Paula",
+    email: "garcom@keepserv.app",
+    phone: "(11) 99456-7890",
+    role: "garcom",
+    password: "keepserv",
+    active: true,
+    createdAt: Date.now() - 45 * 86400000,
+    avatarColor: "bg-emerald-600",
+  },
+  {
+    id: "usr-garcom-2",
+    name: "Rafael Lima",
+    email: "rafael@keepserv.app",
+    phone: "(11) 97321-6549",
+    role: "garcom",
+    password: "keepserv",
+    active: true,
+    createdAt: Date.now() - 30 * 86400000,
+    avatarColor: "bg-teal-600",
+  },
+  {
+    id: "usr-cozinha-1",
+    name: "Chef Carlos (Praça Quente)",
+    email: "cozinha@keepserv.app",
+    phone: "(11) 98765-4321",
+    role: "cozinha",
+    password: "keepserv",
+    active: true,
+    createdAt: Date.now() - 40 * 86400000,
+    avatarColor: "bg-amber-600",
+  },
+  {
+    id: "usr-caixa-1",
+    name: "Juliana Reis",
+    email: "caixa@keepserv.app",
+    phone: "(11) 99888-7766",
+    role: "caixa",
+    password: "keepserv",
+    active: true,
+    createdAt: Date.now() - 35 * 86400000,
+    avatarColor: "bg-blue-600",
+  },
+];
+
 export const DEMO_ACCOUNTS: Record<string, { email: string; name: string }> = {
   garcom: { email: "garcom@keepserv.app", name: "Ana Paula" },
   cozinha: { email: "cozinha@keepserv.app", name: "Praça quente" },
   gestor: { email: "gestor@keepserv.app", name: "Marcos Tavares" },
   caixa: { email: "caixa@keepserv.app", name: "Juliana Reis" },
 };
+
+export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[] {
+  let cfSeq = 0;
+  const cfId = () => `cf-seed-${++cfSeq}`;
+
+  const entries: CashFlowEntry[] = [
+    {
+      id: cfId(),
+      type: "entrada",
+      category: "suprimento",
+      description: "Fundo de Troco Inicial (Abertura de Caixa)",
+      amount: 500.0,
+      method: "dinheiro",
+      timestamp: now - 180 * MIN,
+      author: "Juliana Reis (Caixa)",
+      notes: "Fundo de gaveta conferido na abertura do turno",
+    },
+    {
+      id: cfId(),
+      type: "saida",
+      category: "insumos",
+      description: "Compra emergencial de gelo e hortifruti fresco",
+      amount: 85.0,
+      method: "dinheiro",
+      timestamp: now - 145 * MIN,
+      author: "Marcos Tavares (Gestor)",
+      notes: "Nota fiscal avulsa nº 4122 - Distribuidora Central",
+    },
+    {
+      id: cfId(),
+      type: "saida",
+      category: "sangria",
+      description: "Sangria de segurança para o cofre administrativo",
+      amount: 400.0,
+      method: "dinheiro",
+      timestamp: now - 50 * MIN,
+      author: "Juliana Reis (Caixa)",
+      notes: "Retirada periódica para manter limite de gaveta seguro",
+    },
+    {
+      id: cfId(),
+      type: "saida",
+      category: "pessoal_extra",
+      description: "Adiantamento / Diária de garçom extra (Turno almoço)",
+      amount: 160.0,
+      method: "pix",
+      timestamp: now - 35 * MIN,
+      author: "Marcos Tavares (Gestor)",
+      notes: "Prestador Rodrigo Silva - Salão",
+    },
+    {
+      id: cfId(),
+      type: "saida",
+      category: "manutencao",
+      description: "Reparo emergencial iluminação da bancada do bar",
+      amount: 45.0,
+      method: "dinheiro",
+      timestamp: now - 20 * MIN,
+      author: "Marcos Tavares (Gestor)",
+      notes: "Fita isolante e lâmpada dicroica",
+    },
+  ];
+
+  // Adiciona as comandas pagas existentes como entradas no fluxo de caixa
+  const paidOrders = orders.filter((o) => o.status === "pago" && o.payment);
+  for (const order of paidOrders) {
+    if (order.payment) {
+      entries.push({
+        id: cfId(),
+        type: "entrada",
+        category: "venda_comanda",
+        description: `Recebimento da Comanda ${order.code} · Mesa ${order.table}`,
+        amount: order.payment.amount,
+        method: order.payment.method,
+        timestamp: order.payment.at,
+        author: order.payment.cashier,
+        orderCode: order.code,
+        orderId: order.id,
+        notes: `Fechamento de mesa (${order.payment.splitCount > 1 ? `${order.payment.splitCount}x pessoas` : "Pagamento único"})`,
+      });
+    }
+  }
+
+  // Ordena do mais recente para o mais antigo
+  return entries.sort((a, b) => b.timestamp - a.timestamp);
+}

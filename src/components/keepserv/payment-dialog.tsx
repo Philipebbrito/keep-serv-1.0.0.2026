@@ -1,4 +1,4 @@
-import { Banknote, CreditCard, Minus, Plus, QrCode, Smartphone } from "lucide-react";
+import { Banknote, CreditCard, Minus, Plus, QrCode, Receipt, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal, type Order, type PaymentMethod } from "@/lib/keepserv/types";
+import { orderTotal, ROLE_LABEL, type Order, type PaymentMethod } from "@/lib/keepserv/types";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -24,7 +24,7 @@ const METHODS: { id: PaymentMethod; label: string; icon: typeof Banknote }[] = [
 ];
 
 export function PaymentDialog({ order, onClose }: { order: Order | null; onClose: () => void }) {
-  const { registerPayment } = useKeepServ();
+  const { registerPayment, session } = useKeepServ();
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [split, setSplit] = useState(1);
 
@@ -56,6 +56,14 @@ export function PaymentDialog({ order, onClose }: { order: Order | null; onClose
             Confira os itens, escolha a forma de pagamento e divida a conta se necessário.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface/60 px-3.5 py-2.5 text-xs">
+          <span className="text-muted-foreground">Responsável pelo recebimento:</span>
+          <span className="font-semibold text-foreground flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-full bg-emerald-500" />
+            {session?.name ?? "Operador"} ({ROLE_LABEL[session?.role ?? "garcom"]})
+          </span>
+        </div>
 
         <ul className="space-y-1.5 text-sm">
           {order.items
@@ -136,11 +144,17 @@ export function PaymentDialog({ order, onClose }: { order: Order | null; onClose
           <span className="font-display text-2xl font-semibold tabular-nums">{brl(total)}</span>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={confirm}>Confirmar pagamento</Button>
+          <Button
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+            onClick={confirm}
+          >
+            <Receipt className="size-4" />
+            Confirmar recebimento ({brl(total)})
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

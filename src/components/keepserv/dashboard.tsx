@@ -31,13 +31,13 @@ import {
   AreaChart,
 } from "recharts";
 import { AppShell } from "@/components/keepserv/app-shell";
-import { BillPrintDialog } from "@/components/keepserv/bill-print-dialog.tsx";
-import { CashFlowManager } from "@/components/keepserv/cash-flow-manager.tsx";
-import { MenuStockManagement } from "@/components/keepserv/menu-stock-management.tsx";
-import { OrderDialog } from "@/components/keepserv/order-dialog.tsx";
-import { PaymentDialog } from "@/components/keepserv/payment-dialog.tsx";
-import { TeamManagement } from "@/components/keepserv/team-management.tsx";
-import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard.tsx";
+import { BillPrintDialog } from "@/components/keepserv/bill-print-dialog";
+import { CashFlowManager } from "@/components/keepserv/cash-flow-manager";
+import { MenuStockManagement } from "@/components/keepserv/menu-stock-management";
+import { OrderDialog } from "@/components/keepserv/order-dialog";
+import { PaymentDialog } from "@/components/keepserv/payment-dialog";
+import { TeamManagement } from "@/components/keepserv/team-management";
+import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

@@ -23,13 +23,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       to: "/caixa",
       label: "Caixa",
       icon: Wallet,
-      show: session.role === "gestor" || session.role === "caixa",
+      show: session.role === "gestor" || session.role === "caixa" || session.role === "garcom",
     },
     {
       to: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      show: session.role === "gestor",
+      show: session.role === "gestor" || session.role === "garcom",
     },
   ].filter((n) => n.show);
 

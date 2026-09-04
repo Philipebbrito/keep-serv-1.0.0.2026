@@ -17,6 +17,7 @@ export interface Payment {
   splitCount: number;
   at: number;
   cashier: string;
+  role?: Role;
 }
 
 export type UrgencyLevel = "ontime" | "warn" | "late";
@@ -53,6 +54,14 @@ export interface Order {
   priority: boolean;
   messages: OrderMessage[];
   payment?: Payment | undefined;
+  billPrinted?: boolean | undefined;
+  billPrintedAt?: number | undefined;
+  cleanupRequested?: boolean | undefined;
+  cleanupRequestedAt?: number | undefined;
+  customerName?: string | undefined;
+  customerPhone?: string | undefined;
+  customerRegistered?: boolean | undefined;
+  customerIdentifiedAt?: number | undefined;
 }
 
 export const STATUS_ORDER: OrderStatus[] = ["pendente", "preparo", "pronto", "entregue"];
@@ -71,6 +80,26 @@ export const ROLE_LABEL: Record<Role, string> = {
   gestor: "Gestor",
   caixa: "Caixa",
 };
+
+export const ROLE_DESCRIPTION: Record<Role, string> = {
+  garcom: "Lança pedidos, gerencia comandas no salão e chama atendimento.",
+  cozinha: "Visualiza fila de pedidos, atualiza preparo e avisa o salão.",
+  caixa: "Recebe pagamentos, divide contas e controla caixa da casa.",
+  gestor: "Acesso irrestrito: dashboards operacionais, finanças e gestão de equipe.",
+};
+
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  password: string;
+  active: boolean;
+  createdAt: number;
+  lastPasswordChangeAt?: number;
+  avatarColor?: string;
+}
 
 /** Limite (em minutos) por status antes de virar amarelo / vermelho. */
 export const SLA_MINUTES: Record<OrderStatus, { warn: number; late: number }> = {
@@ -98,7 +127,42 @@ export function elapsedLabel(from: number, now: number): string {
 }
 
 export function orderTotal(order: Order): number {
-  return order.items
-    .filter((i) => !i.canceled)
-    .reduce((sum, i) => sum + i.price * i.qty, 0);
+  return order.items.filter((i) => !i.canceled).reduce((sum, i) => sum + i.price * i.qty, 0);
+}
+
+export type CashFlowType = "entrada" | "saida";
+
+export type CashFlowCategory =
+  | "venda_comanda"
+  | "suprimento"
+  | "sangria"
+  | "insumos"
+  | "pessoal_extra"
+  | "manutencao"
+  | "servicos"
+  | "outros";
+
+export const CASH_FLOW_CATEGORY_LABEL: Record<CashFlowCategory, string> = {
+  venda_comanda: "Venda de Comanda",
+  suprimento: "Suprimento de Troco",
+  sangria: "Sangria de Caixa",
+  insumos: "Compra de Insumos",
+  pessoal_extra: "Diária de Extra / Freelancer",
+  manutencao: "Manutenção & Reparos",
+  servicos: "Serviços Operacionais",
+  outros: "Outras Movimentações",
+};
+
+export interface CashFlowEntry {
+  id: string;
+  type: CashFlowType;
+  category: CashFlowCategory;
+  description: string;
+  amount: number;
+  method?: PaymentMethod | "transferencia" | "outro";
+  timestamp: number;
+  author: string;
+  orderCode?: string;
+  orderId?: string;
+  notes?: string;
 }

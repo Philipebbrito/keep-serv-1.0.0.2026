@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { OrderCard } from "./order-card";
 import { OrderDialog } from "./order-dialog";
+import { PaymentDialog } from "./payment-dialog";
 import { useKeepServ } from "@/lib/keepserv/store";
 import {
   STATUS_LABEL,
@@ -22,10 +23,12 @@ const COLUMN_ACCENT: Record<OrderStatus, string> = {
 export function Kanban() {
   const { orders, session, moveTo, now } = useKeepServ();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [payOrder, setPayOrder] = useState<Order | null>(null);
   const [dragOver, setDragOver] = useState<OrderStatus | null>(null);
 
   const role = session?.role ?? "garcom";
   const openOrder = orders.find((o) => o.id === openId) ?? null;
+  const canPay = role === "garcom" || role === "caixa" || role === "gestor";
 
   const canAdvanceIn = (status: OrderStatus) => {
     if (role === "gestor") return true;
@@ -85,6 +88,7 @@ export function Kanban() {
                     order={order}
                     onOpen={() => setOpenId(order.id)}
                     canAdvance={canAdvanceIn(status)}
+                    onPay={canPay ? () => setPayOrder(order) : undefined}
                   />
                 ))}
                 {list.length === 0 && (
@@ -97,7 +101,12 @@ export function Kanban() {
           );
         })}
       </div>
-      <OrderDialog order={openOrder} onClose={() => setOpenId(null)} />
+      <OrderDialog
+        order={openOrder}
+        onClose={() => setOpenId(null)}
+        onPay={canPay ? (o) => setPayOrder(o) : undefined}
+      />
+      <PaymentDialog order={payOrder} onClose={() => setPayOrder(null)} />
     </>
   );
 }

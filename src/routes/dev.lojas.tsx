@@ -1,18 +1,24 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
+  AtSign,
   Building2,
   Check,
   CheckCircle2,
   Copy,
-  ExternalLink,
   Eye,
   EyeOff,
+  FileText,
   KeyRound,
+  Lock,
   LogOut,
+  Mail,
+  Pencil,
+  Phone,
   Plus,
   Power,
   RefreshCw,
+  Save,
   Search,
   Shield,
   ShieldAlert,
@@ -37,7 +43,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useKeepServ } from "@/lib/keepserv/store";
-import type { StatusLoja, UserAccount } from "@/lib/keepserv/types";
+import type { StatusLoja, UserAccount, Loja } from "@/lib/keepserv/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dev/lojas")({
@@ -71,9 +77,12 @@ function DevLojasPage() {
     allLojas,
     allUsers,
     createLoja,
+    updateLoja,
+    updateUser,
+    changeUserPassword,
+    addUser,
     toggleLojaStatus,
     deleteLoja,
-    switchActiveLoja,
     logout,
   } = useKeepServ();
   const navigate = useNavigate();
@@ -92,6 +101,29 @@ function DevLojasPage() {
   const [gestorSenha, setGestorSenha] = useState("keepserv");
   const [gestorTelefone, setGestorTelefone] = useState("");
   const [showGestorSenha, setShowGestorSenha] = useState(false);
+
+  // Estados do Modal de Edição de Loja e Gestor
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingLoja, setEditingLoja] = useState<Loja | null>(null);
+  const [editingGestor, setEditingGestor] = useState<UserAccount | null>(null);
+
+  // Campos de Edição da Loja
+  const [editNomeFantasia, setEditNomeFantasia] = useState("");
+  const [editCodigoLoja, setEditCodigoLoja] = useState("");
+  const [editStatusLoja, setEditStatusLoja] = useState<StatusLoja>("ativo");
+  const [editCidade, setEditCidade] = useState("");
+  const [editTelefone, setEditTelefone] = useState("");
+  const [editRazaoSocial, setEditRazaoSocial] = useState("");
+  const [editCnpj, setEditCnpj] = useState("");
+
+  // Campos de Edição do Gestor
+  const [editGestorNome, setEditGestorNome] = useState("");
+  const [editGestorUsuario, setEditGestorUsuario] = useState("");
+  const [editGestorEmail, setEditGestorEmail] = useState("");
+  const [editGestorTelefone, setEditGestorTelefone] = useState("");
+  const [editGestorStatus, setEditGestorStatus] = useState<boolean>(true);
+  const [editGestorNovaSenha, setEditGestorNovaSenha] = useState("");
+  const [showEditGestorSenha, setShowEditGestorSenha] = useState(false);
 
   // Estados de Busca e Filtro
   const [search, setSearch] = useState("");
@@ -238,6 +270,166 @@ function DevLojasPage() {
     setGestorTelefone("");
   };
 
+  const handleOpenEdit = (loja: Loja) => {
+    const gestor = allUsers.find(
+      (u) =>
+        u.id === loja.gestor_id ||
+        u.id === loja.dono_id ||
+        (u.loja_id === loja.id && (u.nivel === "gestor" || u.nivel === "dono_loja")),
+    );
+
+    setEditingLoja(loja);
+    setEditingGestor(gestor || null);
+
+    // Loja
+    setEditNomeFantasia(loja.nome_fantasia || "");
+    setEditCodigoLoja(loja.codigo_loja || "");
+    setEditStatusLoja(loja.status || "ativo");
+    setEditCidade(loja.cidade || "");
+    setEditTelefone(loja.telefone || "");
+    setEditRazaoSocial(loja.razao_social || "");
+    setEditCnpj(loja.cnpj || "");
+
+    // Gestor
+    if (gestor) {
+      setEditGestorNome(gestor.nome || gestor.name || "");
+      setEditGestorUsuario(gestor.usuario || gestor.username || "");
+      setEditGestorEmail(gestor.email || "");
+      setEditGestorTelefone(gestor.phone || "");
+      setEditGestorStatus(gestor.active !== false);
+    } else {
+      setEditGestorNome("");
+      setEditGestorUsuario("");
+      setEditGestorEmail("");
+      setEditGestorTelefone("");
+      setEditGestorStatus(true);
+    }
+
+    setEditGestorNovaSenha("");
+    setShowEditGestorSenha(false);
+    setIsEditOpen(true);
+  };
+
+  const handleGenerateEditCode = () => {
+    const prefixes = ["RESTA", "BISTRO", "PUB", "CAFE", "GRILL", "PIZZA", "BURGER"];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const num = Math.floor(10 + Math.random() * 90);
+    setEditCodigoLoja(`${prefix}${num}`);
+  };
+
+  const handleGenerateEditPassword = () => {
+    const chars = "abcdefghjkmnpqrstuvwxyz23456789";
+    let pwd = "";
+    for (let i = 0; i < 8; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setEditGestorNovaSenha(pwd);
+    setShowEditGestorSenha(true);
+    toast.info(`Nova senha gerada: ${pwd}`);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLoja) return;
+
+    const cleanNome = editNomeFantasia.trim();
+    if (!cleanNome) {
+      toast.error("O nome fantasia da loja é obrigatório.");
+      return;
+    }
+
+    const cleanCodigo = editCodigoLoja.trim().toUpperCase();
+    if (!cleanCodigo) {
+      toast.error("O código de login da loja é obrigatório.");
+      return;
+    }
+
+    // Valida se o código de loja é único perante as outras lojas
+    const codeConflict = allLojas.some(
+      (l) => l.id !== editingLoja.id && l.codigo_loja.toUpperCase() === cleanCodigo,
+    );
+    if (codeConflict) {
+      toast.error(`O código de loja "${cleanCodigo}" já está cadastrado em outro estabelecimento.`);
+      return;
+    }
+
+    // Validações do Gestor
+    const cleanGestorNome = editGestorNome.trim();
+    const cleanGestorUsuario = editGestorUsuario
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9._-]/g, "");
+
+    if (cleanGestorNome && !cleanGestorUsuario) {
+      toast.error("Informe um nome de usuário (@usuario) para o gestor.");
+      return;
+    }
+
+    if (cleanGestorUsuario) {
+      const userConflict = allUsers.some(
+        (u) =>
+          u.id !== editingGestor?.id &&
+          ((u.usuario && u.usuario.toLowerCase() === cleanGestorUsuario) ||
+            (u.username && u.username.toLowerCase() === cleanGestorUsuario)),
+      );
+      if (userConflict) {
+        toast.error(`O nome de usuário "@${cleanGestorUsuario}" já está em uso por outro usuário.`);
+        return;
+      }
+    }
+
+    // 1. Atualizar dados cadastrais da Loja
+    updateLoja(editingLoja.id, {
+      nome_fantasia: cleanNome,
+      codigo_loja: cleanCodigo,
+      status: editStatusLoja,
+      cidade: editCidade.trim(),
+      telefone: editTelefone.trim(),
+      razao_social: editRazaoSocial.trim(),
+      cnpj: editCnpj.trim(),
+    });
+
+    // 2. Atualizar ou Vincular dados do Gestor
+    if (editingGestor) {
+      updateUser(editingGestor.id, {
+        nome: cleanGestorNome || editingGestor.nome,
+        name: cleanGestorNome || editingGestor.name,
+        usuario: cleanGestorUsuario || editingGestor.usuario,
+        username: cleanGestorUsuario || editingGestor.username,
+        email: editGestorEmail.trim().toLowerCase(),
+        phone: editGestorTelefone.trim(),
+        active: editGestorStatus,
+      });
+
+      if (editGestorNovaSenha.trim()) {
+        changeUserPassword(editingGestor.id, editGestorNovaSenha.trim());
+      }
+    } else if (cleanGestorNome && cleanGestorUsuario) {
+      const newGestor = addUser({
+        name: cleanGestorNome,
+        nome: cleanGestorNome,
+        usuario: cleanGestorUsuario,
+        username: cleanGestorUsuario,
+        email: editGestorEmail.trim().toLowerCase() || `${cleanGestorUsuario}@keepserv.com`,
+        senha: editGestorNovaSenha.trim() || "keepserv",
+        password: editGestorNovaSenha.trim() || "keepserv",
+        role: "gestor",
+        cargo: "gestor",
+        nivel: "gestor",
+        loja_id: editingLoja.id,
+        phone: editGestorTelefone.trim(),
+      });
+      if (newGestor) {
+        updateLoja(editingLoja.id, { gestor_id: newGestor.id, dono_id: newGestor.id });
+      }
+    }
+
+    toast.success(`Dados da loja "${cleanNome}" e do gestor atualizados com sucesso!`);
+    setIsEditOpen(false);
+  };
+
   const handleConfirmDelete = () => {
     if (!lojaToDelete) return;
     const res = deleteLoja(lojaToDelete.id);
@@ -274,13 +466,10 @@ function DevLojasPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              to="/pedidos"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-            >
-              <Store className="size-3.5" />
-              <span>Ver Salão / Comandas</span>
-            </Link>
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300">
+              <Building2 className="size-3.5" />
+              <span>Gestão de Estabelecimentos</span>
+            </div>
 
             <div className="hidden text-right leading-tight sm:block pl-2">
               <p className="text-sm font-semibold">{session.name}</p>
@@ -681,6 +870,17 @@ function DevLojasPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleOpenEdit(loja)}
+                          className="h-7 px-2 text-[11px] gap-1 text-primary hover:text-primary"
+                          title="Editar dados da loja e do gestor"
+                        >
+                          <Pencil className="size-3" />
+                          <span>Editar</span>
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => toggleLojaStatus(loja.id)}
                           className={cn(
                             "h-7 px-2 text-[11px] gap-1",
@@ -732,22 +932,18 @@ function DevLojasPage() {
                     </div>
 
                     {/* Rodapé do Card com Ações */}
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>ID: {loja.id}</span>
-                      <button
+                    <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2.5 text-[11px] text-muted-foreground">
+                      <span className="font-mono text-[10px]">ID: {loja.id}</span>
+                      <Button
                         type="button"
-                        onClick={() => {
-                          switchActiveLoja(loja.id);
-                          toast.info(
-                            `Inspecionando dados operacionais de "${loja.nome_fantasia}".`,
-                          );
-                          navigate({ to: "/pedidos" });
-                        }}
-                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleOpenEdit(loja)}
+                        className="h-7.5 px-3 text-xs gap-1.5 font-medium rounded-lg shadow-2xs hover:bg-primary/10 hover:text-primary transition-colors"
                       >
-                        <span>Inspecionar Salão / Cardápio</span>
-                        <ExternalLink className="size-3" />
-                      </button>
+                        <Pencil className="size-3 text-primary" />
+                        <span>Editar Loja e Gestor</span>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -766,6 +962,298 @@ function DevLojasPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal de Edição de Loja e Gestor */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl">
+          <form onSubmit={handleSaveEdit}>
+            <DialogHeader className="p-5 border-b border-border bg-muted/20">
+              <div className="flex items-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Pencil className="size-4" />
+                </span>
+                <div>
+                  <DialogTitle className="font-display text-base font-bold text-foreground">
+                    Editar Loja e Gestor Responsável
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground">
+                    Atualize os dados cadastrais do estabelecimento e as credenciais de acesso do
+                    gestor.
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="p-5 space-y-6">
+              {/* Seção 1: Dados da Loja */}
+              <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+                  <Store className="size-4 text-primary" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    1. Dados do Estabelecimento (Loja)
+                  </h4>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="editNomeFantasia" className="text-xs font-medium">
+                      Nome Fantasia da Loja *
+                    </Label>
+                    <Input
+                      id="editNomeFantasia"
+                      required
+                      value={editNomeFantasia}
+                      onChange={(e) => setEditNomeFantasia(e.target.value)}
+                      placeholder="Ex: Bar do Alemão, Pizzaria Bella"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="editCodigoLoja" className="text-xs font-medium">
+                        Código de Login (codigo_loja) *
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateEditCode}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 hover:text-purple-700"
+                      >
+                        <Sparkles className="size-3" />
+                        <span>Sugerir Código</span>
+                      </button>
+                    </div>
+                    <Input
+                      id="editCodigoLoja"
+                      required
+                      value={editCodigoLoja}
+                      onChange={(e) => setEditCodigoLoja(e.target.value.toUpperCase())}
+                      className="font-mono uppercase text-sm"
+                      placeholder="Ex: BARALEMAO01"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Identificador único exigido na tela de login de todos os usuários desta loja.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editStatusLoja" className="text-xs font-medium">
+                      Status da Loja
+                    </Label>
+                    <select
+                      id="editStatusLoja"
+                      value={editStatusLoja}
+                      onChange={(e) => setEditStatusLoja(e.target.value as StatusLoja)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-2xs"
+                    >
+                      <option value="ativo">Ativo (Permite Login e Operação)</option>
+                      <option value="inativo">Inativo (Bloqueado)</option>
+                    </select>
+                    <p className="text-[10px] text-muted-foreground">
+                      Se inativo, colaboradores e gestor são impedidos de fazer login.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editCidade" className="text-xs font-medium">
+                      Cidade / UF
+                    </Label>
+                    <Input
+                      id="editCidade"
+                      value={editCidade}
+                      onChange={(e) => setEditCidade(e.target.value)}
+                      placeholder="Ex: São Paulo / SP"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editTelefone" className="text-xs font-medium">
+                      Telefone / WhatsApp da Loja
+                    </Label>
+                    <Input
+                      id="editTelefone"
+                      value={editTelefone}
+                      onChange={(e) => setEditTelefone(e.target.value)}
+                      placeholder="Ex: (11) 98765-4321"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editRazaoSocial" className="text-xs font-medium">
+                      Razão Social
+                    </Label>
+                    <Input
+                      id="editRazaoSocial"
+                      value={editRazaoSocial}
+                      onChange={(e) => setEditRazaoSocial(e.target.value)}
+                      placeholder="Ex: Alemão Gastronomia LTDA"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editCnpj" className="text-xs font-medium">
+                      CNPJ
+                    </Label>
+                    <Input
+                      id="editCnpj"
+                      value={editCnpj}
+                      onChange={(e) => setEditCnpj(e.target.value)}
+                      placeholder="Ex: 00.000.000/0001-00"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção 2: Dados do Gestor */}
+              <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+                  <UserCheck className="size-4 text-purple-600" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    2. Dados do Gestor da Loja
+                  </h4>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="editGestorNome" className="text-xs font-medium">
+                      Nome Completo do Gestor *
+                    </Label>
+                    <Input
+                      id="editGestorNome"
+                      required
+                      value={editGestorNome}
+                      onChange={(e) => setEditGestorNome(e.target.value)}
+                      placeholder="Ex: Carlos Eduardo"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editGestorUsuario" className="text-xs font-medium">
+                      Nome de Usuário (@usuario) *
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-xs text-muted-foreground">
+                        @
+                      </span>
+                      <Input
+                        id="editGestorUsuario"
+                        required
+                        value={editGestorUsuario}
+                        onChange={(e) => setEditGestorUsuario(e.target.value)}
+                        placeholder="gestor.aleman"
+                        className="pl-7 font-mono text-sm lowercase"
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Utilizado pelo gestor para acessar o sistema no login.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editGestorStatus" className="text-xs font-medium">
+                      Status do Gestor
+                    </Label>
+                    <select
+                      id="editGestorStatus"
+                      value={editGestorStatus ? "ativo" : "inativo"}
+                      onChange={(e) => setEditGestorStatus(e.target.value === "ativo")}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-2xs"
+                    >
+                      <option value="ativo">Conta Ativa (Pode Entrar)</option>
+                      <option value="inativo">Conta Bloqueada (Desativado)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editGestorEmail" className="text-xs font-medium">
+                      E-mail de Contato
+                    </Label>
+                    <Input
+                      id="editGestorEmail"
+                      type="email"
+                      value={editGestorEmail}
+                      onChange={(e) => setEditGestorEmail(e.target.value)}
+                      placeholder="carlos@bardaoalemao.com.br"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editGestorTelefone" className="text-xs font-medium">
+                      Telefone / WhatsApp do Gestor
+                    </Label>
+                    <Input
+                      id="editGestorTelefone"
+                      value={editGestorTelefone}
+                      onChange={(e) => setEditGestorTelefone(e.target.value)}
+                      placeholder="(11) 98765-4321"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Redefinição de Senha */}
+                  <div className="space-y-1.5 sm:col-span-2 pt-1 border-t border-border/50">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="editGestorNovaSenha" className="text-xs font-medium">
+                        Redefinir Senha do Gestor (Opcional)
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateEditPassword}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 hover:text-purple-700"
+                      >
+                        <Sparkles className="size-3" />
+                        <span>Gerar Nova Senha</span>
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="editGestorNovaSenha"
+                        type={showEditGestorSenha ? "text" : "password"}
+                        value={editGestorNovaSenha}
+                        onChange={(e) => setEditGestorNovaSenha(e.target.value)}
+                        placeholder="Deixe em branco para manter a senha atual"
+                        className="pr-10 font-mono text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditGestorSenha(!showEditGestorSenha)}
+                        className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                      >
+                        {showEditGestorSenha ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {editingGestor
+                        ? "Deixe vazio para manter a senha cadastrada pelo gestor."
+                        : "Defina uma senha inicial para o novo gestor."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="p-4 border-t border-border bg-muted/10 flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-primary text-primary-foreground gap-1.5">
+                <Save className="size-4" />
+                <span>Salvar Alterações</span>
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Confirmação de Exclusão */}
       <Dialog open={!!lojaToDelete} onOpenChange={(open) => !open && setLojaToDelete(null)}>

@@ -580,8 +580,18 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       prev.map((l) => {
         if (l.id !== id) return l;
         const updated = { ...l, ...data };
-        if (data.codigo_loja) updated.codigo_loja = data.codigo_loja.trim().toUpperCase();
-        if (data.nome_fantasia) updated.nome_fantasia = data.nome_fantasia.trim();
+        if (data.codigo_loja !== undefined)
+          updated.codigo_loja = data.codigo_loja.trim().toUpperCase();
+        if (data.nome_fantasia !== undefined) updated.nome_fantasia = data.nome_fantasia.trim();
+        if (data.cidade !== undefined) updated.cidade = data.cidade.trim();
+        if (data.telefone !== undefined) updated.telefone = data.telefone.trim();
+        if (data.razao_social !== undefined) updated.razao_social = data.razao_social.trim();
+        if (data.cnpj !== undefined) updated.cnpj = data.cnpj.trim();
+        if (data.status !== undefined) updated.status = data.status;
+        if (data.gestor_id !== undefined) {
+          updated.gestor_id = data.gestor_id;
+          updated.dono_id = data.gestor_id;
+        }
         return updated;
       }),
     );
@@ -888,7 +898,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         prev.map((u) => {
           if (u.id !== id) return u;
           const updated = { ...u, ...data };
-          if (data.email) updated.email = data.email.trim().toLowerCase();
+          if (data.email !== undefined) updated.email = data.email.trim().toLowerCase();
           if (data.usuario) {
             const cleanU = data.usuario.trim().toLowerCase();
             updated.usuario = cleanU;
@@ -906,7 +916,8 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
             updated.senha = data.senha;
             updated.password = data.senha;
           }
-          if (data.phone) updated.phone = data.phone.trim();
+          if (data.phone !== undefined) updated.phone = data.phone.trim();
+          if (data.active !== undefined) updated.active = data.active;
           return updated;
         }),
       );

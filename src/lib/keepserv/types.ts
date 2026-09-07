@@ -23,6 +23,8 @@ export type StatusLoja = "ativo" | "inativo";
 export interface Loja {
   id: string;
   nome_fantasia: string;
+  razao_social?: string;
+  cnpj?: string;
   codigo_loja: string; // único no sistema
   status: StatusLoja; // 'ativo' | 'inativo'
   created_at?: number;

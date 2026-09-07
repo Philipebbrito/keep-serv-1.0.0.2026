@@ -24,8 +24,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!session) navigate({ to: "/" });
-  }, [session, navigate]);
+    if (!session) {
+      navigate({ to: "/" });
+    } else if (session.nivel === "dev" && pathname !== "/dev/lojas") {
+      navigate({ to: "/dev/lojas" });
+    }
+  }, [session, pathname, navigate]);
 
   if (!session) return null;
 
@@ -34,24 +38,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     session.nivel === "gestor" || session.nivel === "dono_loja" || session.role === "gestor";
 
   const nav = [
-    { to: "/pedidos", label: "Quadro de pedidos", icon: KanbanSquare, show: true },
+    { to: "/pedidos", label: "Quadro de pedidos", icon: KanbanSquare, show: !isDev },
     {
       to: "/caixa",
       label: "Caixa",
       icon: Wallet,
-      show: isDev || isGestor || session.role === "caixa",
+      show: !isDev && (isGestor || session.role === "caixa"),
     },
     {
       to: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      show: isDev || isGestor,
+      show: !isDev && isGestor,
     },
     {
       to: "/equipe",
       label: "Minha Equipe",
       icon: Users,
-      show: isGestor && !isDev, // Exclusivo para Gestor da Loja (Dev gerencia apenas lojas cadastradas)
+      show: !isDev && isGestor, // Exclusivo para Gestor da Loja (Dev gerencia apenas lojas cadastradas)
     },
     {
       to: "/dev/lojas",
@@ -66,7 +70,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           {/* Logo & Tenant Info */}
-          <Link to="/pedidos" className="flex items-center gap-2.5 shrink-0">
+          <Link
+            to={isDev ? "/dev/lojas" : "/pedidos"}
+            className="flex items-center gap-2.5 shrink-0"
+          >
             <span className="bg-brand-gradient flex size-9 items-center justify-center rounded-xl shadow-xs">
               <ChefHat className="size-5 text-primary-foreground" />
             </span>
@@ -111,17 +118,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {/* Área do Usuário & Ações */}
           <div className="ml-auto flex items-center gap-2.5 shrink-0">
-            <Link
-              to="/cliente"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
-              title="Abrir autoatendimento do cliente em nova aba"
-            >
-              <QrCode className="size-3.5 text-primary" />
-              <span className="hidden lg:inline">Visão do Cliente</span>
-              <ExternalLink className="size-3 opacity-60" />
-            </Link>
+            {!isDev && (
+              <Link
+                to="/cliente"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
+                title="Abrir autoatendimento do cliente em nova aba"
+              >
+                <QrCode className="size-3.5 text-primary" />
+                <span className="hidden lg:inline">Visão do Cliente</span>
+                <ExternalLink className="size-3 opacity-60" />
+              </Link>
+            )}
 
             {/* Perfil & Nível de Acesso */}
             <div className="hidden text-right leading-tight sm:block pl-1">

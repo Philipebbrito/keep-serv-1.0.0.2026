@@ -78,41 +78,38 @@ function LoginPage() {
             <span className="font-display text-2xl font-semibold text-primary-foreground">
               Keep<span className="text-accent">Serv</span>
             </span>
-            <span className="ml-2.5 rounded-md bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-              Multi-Tenant
-            </span>
+            
           </div>
         </div>
 
         <div className="max-w-lg">
           <h1 className="font-display text-5xl leading-[1.05] font-semibold text-primary-foreground">
-            Arquitetura Multi-Tenant com controle de acesso por níveis.
+            A plataforma completa para impulsionar o seu negócio.
           </h1>
           <p className="mt-5 text-lg text-primary-foreground/80">
-            Separação segura de dados por loja com isolamento de pedidos, cardápio, estoque e equipe
-            de colaboradores.
+            Seus dados, cardápio, estoque e equipe organizados em um único lugar, com acesso seguro e personalizado para cada setor.
           </p>
 
           <div className="mt-8 space-y-4">
             <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-wider text-accent">
-                Níveis de Acesso (RBAC)
-              </p>
+             
               <ul className="mt-2 space-y-2 text-sm text-primary-foreground/90">
-                <li className="flex items-start gap-2">
-                  <span className="font-mono text-xs font-bold text-accent">dev:</span>
-                  <span>Super Admin exclusivo para cadastro e gestão de lojas cadastradas.</span>
+              <li className="flex items-start gap-2">
+                  <span className="font-mono text-xs font-bold text-accent"></span>
+                  <span> • Agilidade no atendimento, organização no estoque e controle de acesso sob medida para cada colaborador.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-xs font-bold text-accent">gestor:</span>
-                  <span>
-                    Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.
+                  <span className="font-mono text-xs font-bold text-accent"></span>
+                  <span> • Controle total sobre vendas, insumos e desempenho operacional..</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono text-xs font-bold text-accent"></span>
+                  <span> • Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-xs font-bold text-accent">colaborador:</span>
-                  <span>
-                    Acesso restrito apenas às operações rotineiras do salão, cozinha ou caixa.
+                  <span className="font-mono text-xs font-bold text-accent"></span>
+                  <span> • Acesso restrito apenas às operações rotineiras do salão, cozinha ou caixa.
                   </span>
                 </li>
               </ul>
@@ -121,7 +118,7 @@ function LoginPage() {
         </div>
 
         <div className="flex items-center justify-between text-xs text-primary-foreground/60">
-          <p>Projeto Integrador · RBAC & Multi-Tenant</p>
+          <p>KEEPSERVAPP ®</p>
           <span className="font-mono">Versão 2.5</span>
         </div>
       </aside>
@@ -171,8 +168,8 @@ function LoginPage() {
                 <Label htmlFor="codigoLoja" className="text-xs font-semibold">
                   Código da Loja
                 </Label>
-                <span className="text-[11px] text-muted-foreground">
-                  (Obrigatório para Gestor/Colaborador · Vazio para Dev)
+                <span className="text-xs text-muted-foreground">
+                  <span className="font-mono">Ex: KEEPSERV01</span>
                 </span>
               </div>
               <div className="relative">
@@ -241,6 +238,12 @@ function LoginPage() {
             <Button type="submit" size="lg" className="w-full font-semibold shadow-xs">
               Entrar no Sistema
             </Button>
+            <Button type="button" size="lg" variant="outline" className="w-full font-semibold shadow-xs">
+              Esqueceu a Senha?
+            </Button>
+            <div className="mt-2 text-center text-xs text-muted-foreground">
+              <span className="font-mono">Versão 2.5</span>
+            </div>  
           </form>
         </div>
       </div>

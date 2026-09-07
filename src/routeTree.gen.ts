@@ -11,8 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CaixaRouteImport } from './routes/caixa'
+import { Route as CardapioRouteImport } from './routes/cardapio'
+import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as PedidosRouteImport } from './routes/pedidos'
+import { Route as ComandaIndexRouteImport } from './routes/comanda/index'
+import { Route as ComandaOrderIdRouteImport } from './routes/comanda/$orderId'
+import { Route as DevLojasRouteImport } from './routes/dev.lojas'
+import { Route as MesaIndexRouteImport } from './routes/mesa/index'
+import { Route as MesaTableIdRouteImport } from './routes/mesa/$tableId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,9 +32,24 @@ const CaixaRoute = CaixaRouteImport.update({
   path: '/caixa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CardapioRoute = CardapioRouteImport.update({
+  id: '/cardapio',
+  path: '/cardapio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClienteRoute = ClienteRouteImport.update({
+  id: '/cliente',
+  path: '/cliente',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipeRoute = EquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PedidosRoute = PedidosRouteImport.update({
@@ -34,39 +57,133 @@ const PedidosRoute = PedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComandaIndexRoute = ComandaIndexRouteImport.update({
+  id: '/comanda/',
+  path: '/comanda/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComandaOrderIdRoute = ComandaOrderIdRouteImport.update({
+  id: '/comanda/$orderId',
+  path: '/comanda/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevLojasRoute = DevLojasRouteImport.update({
+  id: '/dev/lojas',
+  path: '/dev/lojas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MesaIndexRoute = MesaIndexRouteImport.update({
+  id: '/mesa/',
+  path: '/mesa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MesaTableIdRoute = MesaTableIdRouteImport.update({
+  id: '/mesa/$tableId',
+  path: '/mesa/$tableId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/caixa': typeof CaixaRoute
+  '/cardapio': typeof CardapioRoute
+  '/cliente': typeof ClienteRoute
   '/dashboard': typeof DashboardRoute
+  '/equipe': typeof EquipeRoute
   '/pedidos': typeof PedidosRoute
+  '/comanda/$orderId': typeof ComandaOrderIdRoute
+  '/dev/lojas': typeof DevLojasRoute
+  '/mesa/$tableId': typeof MesaTableIdRoute
+  '/comanda/': typeof ComandaIndexRoute
+  '/mesa/': typeof MesaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/caixa': typeof CaixaRoute
+  '/cardapio': typeof CardapioRoute
+  '/cliente': typeof ClienteRoute
   '/dashboard': typeof DashboardRoute
+  '/equipe': typeof EquipeRoute
   '/pedidos': typeof PedidosRoute
+  '/comanda/$orderId': typeof ComandaOrderIdRoute
+  '/dev/lojas': typeof DevLojasRoute
+  '/mesa/$tableId': typeof MesaTableIdRoute
+  '/comanda': typeof ComandaIndexRoute
+  '/mesa': typeof MesaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/caixa': typeof CaixaRoute
+  '/cardapio': typeof CardapioRoute
+  '/cliente': typeof ClienteRoute
   '/dashboard': typeof DashboardRoute
+  '/equipe': typeof EquipeRoute
   '/pedidos': typeof PedidosRoute
+  '/comanda/$orderId': typeof ComandaOrderIdRoute
+  '/dev/lojas': typeof DevLojasRoute
+  '/mesa/$tableId': typeof MesaTableIdRoute
+  '/comanda/': typeof ComandaIndexRoute
+  '/mesa/': typeof MesaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/caixa' | '/dashboard' | '/pedidos'
+  fullPaths:
+    | '/'
+    | '/caixa'
+    | '/cardapio'
+    | '/cliente'
+    | '/dashboard'
+    | '/equipe'
+    | '/pedidos'
+    | '/comanda/$orderId'
+    | '/dev/lojas'
+    | '/mesa/$tableId'
+    | '/comanda/'
+    | '/mesa/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/caixa' | '/dashboard' | '/pedidos'
-  id: '__root__' | '/' | '/caixa' | '/dashboard' | '/pedidos'
+  to:
+    | '/'
+    | '/caixa'
+    | '/cardapio'
+    | '/cliente'
+    | '/dashboard'
+    | '/equipe'
+    | '/pedidos'
+    | '/comanda/$orderId'
+    | '/dev/lojas'
+    | '/mesa/$tableId'
+    | '/comanda'
+    | '/mesa'
+  id:
+    | '__root__'
+    | '/'
+    | '/caixa'
+    | '/cardapio'
+    | '/cliente'
+    | '/dashboard'
+    | '/equipe'
+    | '/pedidos'
+    | '/comanda/$orderId'
+    | '/dev/lojas'
+    | '/mesa/$tableId'
+    | '/comanda/'
+    | '/mesa/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CaixaRoute: typeof CaixaRoute
+  CardapioRoute: typeof CardapioRoute
+  ClienteRoute: typeof ClienteRoute
   DashboardRoute: typeof DashboardRoute
+  EquipeRoute: typeof EquipeRoute
   PedidosRoute: typeof PedidosRoute
+  ComandaOrderIdRoute: typeof ComandaOrderIdRoute
+  DevLojasRoute: typeof DevLojasRoute
+  MesaTableIdRoute: typeof MesaTableIdRoute
+  ComandaIndexRoute: typeof ComandaIndexRoute
+  MesaIndexRoute: typeof MesaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,11 +202,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaixaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cardapio': {
+      id: '/cardapio'
+      path: '/cardapio'
+      fullPath: '/cardapio'
+      preLoaderRoute: typeof CardapioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cliente': {
+      id: '/cliente'
+      path: '/cliente'
+      fullPath: '/cliente'
+      preLoaderRoute: typeof ClienteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipe': {
+      id: '/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof EquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pedidos': {
@@ -99,14 +237,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comanda/': {
+      id: '/comanda/'
+      path: '/comanda'
+      fullPath: '/comanda/'
+      preLoaderRoute: typeof ComandaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comanda/$orderId': {
+      id: '/comanda/$orderId'
+      path: '/comanda/$orderId'
+      fullPath: '/comanda/$orderId'
+      preLoaderRoute: typeof ComandaOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/lojas': {
+      id: '/dev/lojas'
+      path: '/dev/lojas'
+      fullPath: '/dev/lojas'
+      preLoaderRoute: typeof DevLojasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mesa/': {
+      id: '/mesa/'
+      path: '/mesa'
+      fullPath: '/mesa/'
+      preLoaderRoute: typeof MesaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mesa/$tableId': {
+      id: '/mesa/$tableId'
+      path: '/mesa/$tableId'
+      fullPath: '/mesa/$tableId'
+      preLoaderRoute: typeof MesaTableIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CaixaRoute: CaixaRoute,
+  CardapioRoute: CardapioRoute,
+  ClienteRoute: ClienteRoute,
   DashboardRoute: DashboardRoute,
+  EquipeRoute: EquipeRoute,
   PedidosRoute: PedidosRoute,
+  ComandaOrderIdRoute: ComandaOrderIdRoute,
+  DevLojasRoute: DevLojasRoute,
+  MesaTableIdRoute: MesaTableIdRoute,
+  ComandaIndexRoute: ComandaIndexRoute,
+  MesaIndexRoute: MesaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

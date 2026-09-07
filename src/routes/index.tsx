@@ -78,7 +78,6 @@ function LoginPage() {
             <span className="font-display text-2xl font-semibold text-primary-foreground">
               Keep<span className="text-accent">Serv</span>
             </span>
-            
           </div>
         </div>
 
@@ -87,16 +86,20 @@ function LoginPage() {
             A plataforma completa para impulsionar o seu negócio.
           </h1>
           <p className="mt-5 text-lg text-primary-foreground/80">
-            Seus dados, cardápio, estoque e equipe organizados em um único lugar, com acesso seguro e personalizado para cada setor.
+            Seus dados, cardápio, estoque e equipe organizados em um único lugar, com acesso seguro
+            e personalizado para cada setor.
           </p>
 
           <div className="mt-8 space-y-4">
             <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur">
-             
               <ul className="mt-2 space-y-2 text-sm text-primary-foreground/90">
-              <li className="flex items-start gap-2">
+                <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent"></span>
-                  <span> • Agilidade no atendimento, organização no estoque e controle de acesso sob medida para cada colaborador.</span>
+                  <span>
+                    {" "}
+                    • Agilidade no atendimento, organização no estoque e controle de acesso sob
+                    medida para cada colaborador.
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent"></span>
@@ -104,12 +107,16 @@ function LoginPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent"></span>
-                  <span> • Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.
+                  <span>
+                    {" "}
+                    • Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent"></span>
-                  <span> • Acesso restrito apenas às operações rotineiras do salão, cozinha ou caixa.
+                  <span>
+                    {" "}
+                    • Acesso restrito apenas às operações rotineiras do salão, cozinha ou caixa.
                   </span>
                 </li>
               </ul>
@@ -136,9 +143,7 @@ function LoginPage() {
                 Keep<span className="text-accent">Serv</span>
               </span>
             </div>
-            <Badge variant="outline" className="text-xs">
-              Multi-Tenant
-            </Badge>
+            
           </div>
 
           <div>
@@ -238,12 +243,23 @@ function LoginPage() {
             <Button type="submit" size="lg" className="w-full font-semibold shadow-xs">
               Entrar no Sistema
             </Button>
-            <Button type="button" size="lg" variant="outline" className="w-full font-semibold shadow-xs">
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="w-full font-semibold shadow-xs"
+              onClick={() => {
+                toast.info("Recuperação de Acesso", {
+                  description:
+                    "Para redefinir sua senha, solicite ao Gestor da sua loja pelo painel 'Minha Equipe' ou contate o suporte técnico.",
+                });
+              }}
+            >
               Esqueceu a Senha?
             </Button>
             <div className="mt-2 text-center text-xs text-muted-foreground">
               <span className="font-mono">Versão 2.5</span>
-            </div>  
+            </div>
           </form>
         </div>
       </div>

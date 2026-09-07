@@ -20,7 +20,15 @@ import {
   CreditCard,
   Banknote,
   QrCode,
-  Calendar,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  RotateCcw,
+  History,
+  Lock,
+  CalendarDays,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -45,6 +53,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useKeepServ } from "@/lib/keepserv/store";
 import {
   CASH_FLOW_CATEGORY_LABEL,
@@ -63,8 +73,59 @@ function formatBRL(value: number) {
   }).format(value);
 }
 
+function toISODate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseISODate(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+function isSameDay(t1: number | Date, t2: number | Date): boolean {
+  const d1 = new Date(t1);
+  const d2 = new Date(t2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+function isToday(d: Date): boolean {
+  return isSameDay(d, new Date());
+}
+
+function isYesterday(d: Date): boolean {
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return isSameDay(d, y);
+}
+
+function formatDateDisplay(d: Date): string {
+  const dayName = d.toLocaleDateString("pt-BR", { weekday: "long" });
+  const dayNum = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const capitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+  return `${capitalized}, ${dayNum}`;
+}
+
 export function CashFlowManager() {
-  const { cashFlowEntries, orders, addCashFlowEntry, deleteCashFlowEntry, session } = useKeepServ();
+  const {
+    cashFlowEntries,
+    orders,
+    addCashFlowEntry,
+    deleteCashFlowEntry,
+    resetCashFlowToDefault,
+    session,
+  } = useKeepServ();
+
+  // Estados de navegação temporal / histórico por data
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [viewScope, setViewScope] = useState<"day" | "last7days" | "last30days" | "all">("day");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Estados de modais
   const [isNewEntryOpen, setIsNewEntryOpen] = useState(false);
@@ -78,6 +139,7 @@ export function CashFlowManager() {
   const [formAmount, setFormAmount] = useState("");
   const [formMethod, setFormMethod] = useState<PaymentMethod | "transferencia">("dinheiro");
   const [formNotes, setFormNotes] = useState("");
+  const [formDate, setFormDate] = useState(() => toISODate(new Date()));
 
   // Filtros da tabela
   const [filterType, setFilterType] = useState<"all" | CashFlowType>("all");
@@ -85,7 +147,59 @@ export function CashFlowManager() {
   const [filterMethod, setFilterMethod] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Cálculo de KPIs Financeiros
+  // Navegação rápida de datas
+  const goToPreviousDay = () => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 1);
+      return d;
+    });
+    setViewScope("day");
+  };
+
+  const goToNextDay = () => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 1);
+      return d;
+    });
+    setViewScope("day");
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+    setViewScope("day");
+  };
+
+  const goToYesterday = () => {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    setSelectedDate(y);
+    setViewScope("day");
+  };
+
+  const canGoNext = useMemo(() => {
+    const today = new Date();
+    return !isSameDay(selectedDate, today) && selectedDate < today;
+  }, [selectedDate]);
+
+  // Lançamentos filtrados pelo escopo de data selecionado
+  const entriesInScope = useMemo(() => {
+    if (viewScope === "day") {
+      return cashFlowEntries.filter((e) => isSameDay(e.timestamp, selectedDate));
+    }
+    if (viewScope === "last7days") {
+      const limit = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return cashFlowEntries.filter((e) => e.timestamp >= limit);
+    }
+    if (viewScope === "last30days") {
+      const limit = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      return cashFlowEntries.filter((e) => e.timestamp >= limit);
+    }
+    return cashFlowEntries;
+  }, [cashFlowEntries, viewScope, selectedDate]);
+
+  // Cálculo de KPIs Financeiros sobre o período selecionado
   const kpis = useMemo(() => {
     let totalEntradas = 0;
     let totalSaidas = 0;
@@ -97,7 +211,7 @@ export function CashFlowManager() {
     let totalSuprimentos = 0;
     let totalDespesasInsumos = 0;
 
-    for (const entry of cashFlowEntries) {
+    for (const entry of entriesInScope) {
       if (entry.type === "entrada") {
         totalEntradas += entry.amount;
         if (entry.category === "venda_comanda") {
@@ -129,10 +243,12 @@ export function CashFlowManager() {
 
     const saldoOperacional = totalEntradas - totalSaidas;
 
-    // Previsão das comandas abertas no salão
-    const pendentesValor = orders
-      .filter((o) => o.status !== "pago")
-      .reduce((acc, o) => acc + orderTotal(o), 0);
+    // Previsão das comandas abertas no salão (apenas se for hoje)
+    const isViewingToday = viewScope === "day" ? isToday(selectedDate) : true;
+    const pendentesCount = isViewingToday ? orders.filter((o) => o.status !== "pago").length : 0;
+    const pendentesValor = isViewingToday
+      ? orders.filter((o) => o.status !== "pago").reduce((acc, o) => acc + orderTotal(o), 0)
+      : 0;
 
     return {
       totalEntradas,
@@ -146,11 +262,13 @@ export function CashFlowManager() {
       totalSangrias,
       totalSuprimentos,
       totalDespesasInsumos,
+      pendentesCount,
       pendentesValor,
+      isViewingToday,
     };
-  }, [cashFlowEntries, orders]);
+  }, [entriesInScope, orders, viewScope, selectedDate]);
 
-  // Gráfico: Comparativo de Receitas por Método de Pagamento
+  // Gráfico: Comparativo de Receitas por Método de Pagamento no período selecionado
   const paymentMethodData = useMemo(() => {
     const map: Record<string, number> = {
       pix: 0,
@@ -159,7 +277,7 @@ export function CashFlowManager() {
       debito: 0,
     };
 
-    for (const entry of cashFlowEntries) {
+    for (const entry of entriesInScope) {
       if (entry.type === "entrada" && entry.method && entry.method in map) {
         map[entry.method] = (map[entry.method] || 0) + entry.amount;
       }
@@ -171,13 +289,13 @@ export function CashFlowManager() {
       { metodo: "Débito", total: map.debito, fill: "var(--chart-3)" },
       { metodo: "Dinheiro", total: map.dinheiro, fill: "var(--chart-4)" },
     ];
-  }, [cashFlowEntries]);
+  }, [entriesInScope]);
 
-  // Gráfico: Despesas por Categoria
+  // Gráfico: Despesas por Categoria no período selecionado
   const expensesByCategoryData = useMemo(() => {
     const map: Record<string, number> = {};
 
-    for (const entry of cashFlowEntries) {
+    for (const entry of entriesInScope) {
       if (entry.type === "saida") {
         const label = CASH_FLOW_CATEGORY_LABEL[entry.category] || entry.category;
         map[label] = (map[label] || 0) + entry.amount;
@@ -188,11 +306,11 @@ export function CashFlowManager() {
       categoria,
       valor,
     }));
-  }, [cashFlowEntries]);
+  }, [entriesInScope]);
 
-  // Filtragem dos lançamentos
+  // Filtragem dos lançamentos pelo termo de busca e seletores secundários
   const filteredEntries = useMemo(() => {
-    return cashFlowEntries.filter((entry) => {
+    return entriesInScope.filter((entry) => {
       if (filterType !== "all" && entry.type !== filterType) return false;
       if (filterCategory !== "all" && entry.category !== filterCategory) return false;
       if (filterMethod !== "all" && entry.method !== filterMethod) return false;
@@ -208,10 +326,12 @@ export function CashFlowManager() {
 
       return true;
     });
-  }, [cashFlowEntries, filterType, filterCategory, filterMethod, searchQuery]);
+  }, [entriesInScope, filterType, filterCategory, filterMethod, searchQuery]);
 
   // Handlers para ações rápidas
-  const handleOpenNewEntry = (type: CashFlowType, cat?: CashFlowCategory) => {
+  const handleOpenNewEntry = (type: CashFlowType, cat?: CashFlowCategory, targetDate?: Date) => {
+    const d = targetDate || (viewScope === "day" ? selectedDate : new Date());
+    setFormDate(toISODate(d));
     setFormType(type);
     setFormCategory(cat ?? (type === "entrada" ? "suprimento" : "insumos"));
     setFormMethod(type === "entrada" ? "pix" : "dinheiro");
@@ -239,18 +359,23 @@ export function CashFlowManager() {
       return;
     }
 
+    const targetDate = parseISODate(formDate);
+    const now = new Date();
+    targetDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
     addCashFlowEntry({
       type: formType,
       category: formCategory,
       description: formDescription.trim(),
       amount: parsedAmount,
       method: formMethod,
+      timestamp: targetDate.getTime(),
       notes: formNotes.trim() || undefined,
       author: session?.name ? `${session.name} (Gestor)` : "Marcos Tavares (Gestor)",
     });
 
     toast.success(
-      `${formType === "entrada" ? "Entrada" : "Saída"} de ${formatBRL(parsedAmount)} registrada com sucesso!`,
+      `${formType === "entrada" ? "Entrada" : "Saída"} de ${formatBRL(parsedAmount)} registrada com sucesso para ${targetDate.toLocaleDateString("pt-BR")}!`,
     );
     setIsNewEntryOpen(false);
   };
@@ -282,17 +407,35 @@ export function CashFlowManager() {
       <div className="card-elevated flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex size-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Caixa Aberto · Turno em Andamento
-            </span>
+            {viewScope === "day" && isToday(selectedDate) ? (
+              <>
+                <span className="flex size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Caixa Aberto · Turno Atual em Andamento
+                </span>
+              </>
+            ) : viewScope === "day" ? (
+              <>
+                <Lock className="size-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Histórico de Caixa Fechado · {selectedDate.toLocaleDateString("pt-BR")}
+                </span>
+              </>
+            ) : (
+              <>
+                <History className="size-3.5 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  Visão Histórica Consolidada
+                </span>
+              </>
+            )}
           </div>
           <h2 className="font-display text-xl font-bold tracking-tight mt-1">
             Fluxo de Caixa & Gestão Financeira
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Conciliação financeira em tempo real, gaveta de dinheiro físico, sangrias e conciliação
-            de comandas.
+            Conciliação financeira em tempo real, histórico retroativo por calendário, gaveta de
+            dinheiro físico e fechamentos.
           </p>
         </div>
 
@@ -338,6 +481,317 @@ export function CashFlowManager() {
         </div>
       </div>
 
+      {/* Barra de Controle de Período & Navegação Temporal com Calendário */}
+      <div className="card-elevated p-4 space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          {/* Seletor de Escopo Temporal */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 whitespace-nowrap">
+              <History className="size-3.5" />
+              Período:
+            </span>
+            <button
+              type="button"
+              onClick={() => setViewScope("day")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                viewScope === "day"
+                  ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              📅 Por Dia (Calendário)
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewScope("last7days")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                viewScope === "last7days"
+                  ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Últimos 7 dias
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewScope("last30days")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                viewScope === "last30days"
+                  ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Últimos 30 dias
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewScope("all")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                viewScope === "all"
+                  ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Histórico Completo
+            </button>
+          </div>
+
+          {/* Atalho para redefinir histórico demonstrativo se desejado */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-[11px] text-muted-foreground hover:text-foreground gap-1"
+              onClick={() => {
+                if (
+                  confirm(
+                    "Deseja restaurar o histórico demonstrativo com lançamentos completos dos últimos 7 dias?",
+                  )
+                ) {
+                  resetCashFlowToDefault();
+                  toast.success("Histórico demonstrativo recarregado com sucesso!");
+                }
+              }}
+              title="Restaura lançamentos de demonstração dos últimos 7 dias"
+            >
+              <RotateCcw className="size-3" />
+              <span>Restaurar Histórico Padrão</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Linha de Navegação do Dia Selecionado com Popover e Calendário */}
+        {viewScope === "day" && (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Botão Dia Anterior */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 text-xs gap-1"
+                onClick={goToPreviousDay}
+                title="Ver dia anterior"
+              >
+                <ChevronLeft className="size-3.5" />
+                <span className="hidden sm:inline">Dia Anterior</span>
+              </Button>
+
+              {/* Botão Central com Popover do Calendário */}
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-8 px-3 text-xs font-semibold gap-2 border-primary/30 hover:border-primary/60 bg-background shadow-xs"
+                  >
+                    <CalendarIcon className="size-3.5 text-primary" />
+                    <span>{formatDateDisplay(selectedDate)}</span>
+                    {isToday(selectedDate) ? (
+                      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                        Hoje · Aberto
+                      </Badge>
+                    ) : isYesterday(selectedDate) ? (
+                      <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 text-[10px] px-1.5 py-0">
+                        Ontem · Fechado
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 text-muted-foreground"
+                      >
+                        Histórico Fechado
+                      </Badge>
+                    )}
+                    <ChevronDown className="size-3 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <CalendarIcon className="size-3.5 text-primary" />
+                        Escolha uma data no calendário
+                      </p>
+                      <Badge variant="outline" className="text-[10px]">
+                        Histórico
+                      </Badge>
+                    </div>
+
+                    {/* Componente Calendar */}
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(d) => {
+                        if (d) {
+                          setSelectedDate(d);
+                          setViewScope("day");
+                          setIsCalendarOpen(false);
+                          toast.info(
+                            `Visualizando fluxo de caixa de ${d.toLocaleDateString("pt-BR")}`,
+                          );
+                        }
+                      }}
+                      disabled={(date) => date > new Date()}
+                      className="rounded-md border p-2"
+                    />
+
+                    {/* Atalhos rápidos dentro do calendário */}
+                    <div className="pt-2 border-t border-border/60 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-[11px] text-muted-foreground mr-1">Atalhos:</span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          goToToday();
+                          setIsCalendarOpen(false);
+                        }}
+                      >
+                        Hoje
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          goToYesterday();
+                          setIsCalendarOpen(false);
+                        }}
+                      >
+                        Ontem
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() - 2);
+                          setSelectedDate(d);
+                          setViewScope("day");
+                          setIsCalendarOpen(false);
+                        }}
+                      >
+                        Anteontem
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() - 7);
+                          setSelectedDate(d);
+                          setViewScope("day");
+                          setIsCalendarOpen(false);
+                        }}
+                      >
+                        7 Dias Atrás
+                      </Button>
+                    </div>
+
+                    {/* Entrada manual de data */}
+                    <div className="flex items-center gap-2 pt-1 text-xs">
+                      <Label
+                        htmlFor="manualDateInput"
+                        className="text-[11px] text-muted-foreground whitespace-nowrap"
+                      >
+                        Ou digite a data:
+                      </Label>
+                      <Input
+                        id="manualDateInput"
+                        type="date"
+                        max={toISODate(new Date())}
+                        value={toISODate(selectedDate)}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const d = parseISODate(e.target.value);
+                            setSelectedDate(d);
+                            setViewScope("day");
+                            setIsCalendarOpen(false);
+                          }
+                        }}
+                        className="h-7 text-xs w-auto"
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Botão Próximo Dia */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 text-xs gap-1"
+                onClick={goToNextDay}
+                disabled={!canGoNext}
+                title={canGoNext ? "Ver próximo dia" : "Você já está na data de hoje"}
+              >
+                <span className="hidden sm:inline">Próximo Dia</span>
+                <ChevronRight className="size-3.5" />
+              </Button>
+
+              {/* Botão para voltar direto para Hoje se estiver em dia anterior */}
+              {!isToday(selectedDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs text-primary hover:text-primary gap-1"
+                  onClick={goToToday}
+                >
+                  <RotateCcw className="size-3" />
+                  <span>Voltar para Hoje</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Status do Dia */}
+            <div className="flex items-center gap-2 text-xs">
+              {isToday(selectedDate) ? (
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Turno em Andamento (Caixa Aberto)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                  <Lock className="size-3 text-muted-foreground" />
+                  <span>Turno Fechado (Consulta Histórica)</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Resumo quando em visão consolidada */}
+        {viewScope !== "day" && (
+          <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                {viewScope === "last7days"
+                  ? "Consolidado dos Últimos 7 dias"
+                  : viewScope === "last30days"
+                    ? "Consolidado dos Últimos 30 dias"
+                    : "Histórico Completo de Todas as Datas"}
+              </Badge>
+              <span className="text-muted-foreground">
+                {entriesInScope.length} movimentação(ões) no período selecionado
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => {
+                setSelectedDate(new Date());
+                setViewScope("day");
+              }}
+            >
+              <CalendarIcon className="size-3" />
+              Ver Caixa de Hoje
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Grid de KPIs Financeiros */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* Saldo Líquido Operacional */}
@@ -367,7 +821,7 @@ export function CashFlowManager() {
                   : "text-rose-600 border-rose-500/30"
               }
             >
-              {kpis.saldoOperacional >= 0 ? "Superávit do turno" : "Déficit temporário"}
+              {kpis.saldoOperacional >= 0 ? "Superávit do período" : "Déficit temporário"}
             </Badge>
           </div>
         </div>
@@ -387,7 +841,11 @@ export function CashFlowManager() {
           </p>
           <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-border/50">
             <span className="text-muted-foreground">Conferência física</span>
-            <span className="font-medium text-muted-foreground">Gaveta do caixa</span>
+            <span className="font-medium text-muted-foreground">
+              {viewScope === "day" && !isToday(selectedDate)
+                ? "Saldo do fechamento"
+                : "Gaveta física"}
+            </span>
           </div>
         </div>
 
@@ -423,10 +881,12 @@ export function CashFlowManager() {
           </p>
           <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-border/50">
             <span className="text-muted-foreground">
-              {orders.filter((o) => o.status !== "pago").length} comandas em aberto
+              {kpis.isViewingToday
+                ? `${kpis.pendentesCount} comanda(s) em aberto`
+                : "Caixa encerrado no dia"}
             </span>
             <Badge variant="outline" className="text-purple-600 border-purple-500/30">
-              Previsão de receita
+              {kpis.isViewingToday ? "Previsão de receita" : "Fechado"}
             </Badge>
           </div>
         </div>
@@ -476,7 +936,7 @@ export function CashFlowManager() {
             <div>
               <h3 className="font-display text-base font-semibold">Mix de Meios de Pagamento</h3>
               <p className="text-xs text-muted-foreground">
-                Distribuição das receitas recebidas por modalidade
+                Distribuição das receitas recebidas por modalidade no período
               </p>
             </div>
             <Wallet className="size-4 text-muted-foreground" />
@@ -513,7 +973,7 @@ export function CashFlowManager() {
                 Distribuição de Saídas Operacionais
               </h3>
               <p className="text-xs text-muted-foreground">
-                Onde foram aplicadas as saídas do turno
+                Onde foram aplicadas as saídas do período
               </p>
             </div>
             <TrendingDown className="size-4 text-rose-500" />
@@ -551,7 +1011,7 @@ export function CashFlowManager() {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                Nenhuma saída registrada até o momento.
+                Nenhuma saída registrada para este período.
               </div>
             )}
           </div>
@@ -566,8 +1026,13 @@ export function CashFlowManager() {
               Extrato de Movimentações (Livro Caixa)
             </h3>
             <p className="text-xs text-muted-foreground">
-              Histórico detalhado de todas as receitas de comandas, aportes, sangrias e despesas do
-              turno.
+              {viewScope === "day"
+                ? `Exibindo movimentações de: ${formatDateDisplay(selectedDate)}`
+                : viewScope === "last7days"
+                  ? "Exibindo movimentações consolidadas dos últimos 7 dias"
+                  : viewScope === "last30days"
+                    ? "Exibindo movimentações consolidadas dos últimos 30 dias"
+                    : "Exibindo todo o histórico de lançamentos do estabelecimento"}
             </p>
           </div>
           <Badge variant="outline" className="w-fit text-xs font-medium">
@@ -636,7 +1101,7 @@ export function CashFlowManager() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground uppercase tracking-wider font-semibold">
-                <th className="py-2.5 px-3">Horário</th>
+                <th className="py-2.5 px-3">{viewScope === "day" ? "Horário" : "Data & Hora"}</th>
                 <th className="py-2.5 px-3">Tipo</th>
                 <th className="py-2.5 px-3">Categoria</th>
                 <th className="py-2.5 px-3">Descrição / Detalhes</th>
@@ -647,129 +1112,151 @@ export function CashFlowManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {filteredEntries.map((entry) => {
-                const date = new Date(entry.timestamp);
-                const timeStr = date.toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-                const isEntrada = entry.type === "entrada";
+              {filteredEntries.length > 0 ? (
+                filteredEntries.map((entry) => {
+                  const date = new Date(entry.timestamp);
+                  const formattedTime =
+                    viewScope === "day"
+                      ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                      : `${date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                  const isEntrada = entry.type === "entrada";
 
-                return (
-                  <tr key={entry.id} className="hover:bg-muted/20 transition-colors">
-                    {/* Horário */}
-                    <td className="py-2.5 px-3 text-muted-foreground font-mono whitespace-nowrap">
-                      {timeStr}
-                    </td>
+                  return (
+                    <tr key={entry.id} className="hover:bg-muted/20 transition-colors">
+                      {/* Data / Horário */}
+                      <td className="py-2.5 px-3 text-muted-foreground font-mono whitespace-nowrap">
+                        {formattedTime}
+                      </td>
 
-                    {/* Tipo */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      {isEntrada ? (
-                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px]">
-                          <ArrowUpRight className="size-3" />
-                          Entrada
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full text-[10px]">
-                          <ArrowDownRight className="size-3" />
-                          Saída
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Categoria */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <Badge variant="outline" className="text-[10px] font-medium">
-                        {CASH_FLOW_CATEGORY_LABEL[entry.category] ?? entry.category}
-                      </Badge>
-                    </td>
-
-                    {/* Descrição */}
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {entry.orderCode && (
-                          <span className="font-semibold px-1.5 py-0.2 rounded bg-secondary text-secondary-foreground text-[10px]">
-                            {entry.orderCode}
+                      {/* Tipo */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        {isEntrada ? (
+                          <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px]">
+                            <ArrowUpRight className="size-3" />
+                            Entrada
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full text-[10px]">
+                            <ArrowDownRight className="size-3" />
+                            Saída
                           </span>
                         )}
-                        <span className="font-medium text-foreground">{entry.description}</span>
-                        {entry.notes && (
-                          <span className="text-[10px] text-muted-foreground italic">
-                            ({entry.notes})
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Forma de Pagamento */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground capitalize">
-                        {entry.method === "dinheiro" && (
-                          <Banknote className="size-3 text-amber-500" />
-                        )}
-                        {entry.method === "pix" && <QrCode className="size-3 text-emerald-500" />}
-                        {(entry.method === "credito" || entry.method === "debito") && (
-                          <CreditCard className="size-3 text-blue-500" />
-                        )}
-                        {entry.method
-                          ? PAYMENT_LABEL[entry.method as PaymentMethod] || entry.method
-                          : "-"}
-                      </span>
-                    </td>
+                      {/* Categoria */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <Badge variant="outline" className="text-[10px] font-medium">
+                          {CASH_FLOW_CATEGORY_LABEL[entry.category] ?? entry.category}
+                        </Badge>
+                      </td>
 
-                    {/* Autor */}
-                    <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                      {entry.author}
-                    </td>
+                      {/* Descrição */}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {entry.orderCode && (
+                            <span className="font-semibold px-1.5 py-0.2 rounded bg-secondary text-secondary-foreground text-[10px]">
+                              {entry.orderCode}
+                            </span>
+                          )}
+                          <span className="font-medium text-foreground">{entry.description}</span>
+                          {entry.notes && (
+                            <span className="text-[10px] text-muted-foreground italic">
+                              ({entry.notes})
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* Valor */}
-                    <td className="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap">
-                      <span
-                        className={
-                          isEntrada
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400"
-                        }
-                      >
-                        {isEntrada ? "+ " : "- "}
-                        {formatBRL(entry.amount)}
-                      </span>
-                    </td>
+                      {/* Forma de Pagamento */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground capitalize">
+                          {entry.method === "dinheiro" && (
+                            <Banknote className="size-3 text-amber-500" />
+                          )}
+                          {entry.method === "pix" && <QrCode className="size-3 text-emerald-500" />}
+                          {(entry.method === "credito" || entry.method === "debito") && (
+                            <CreditCard className="size-3 text-blue-500" />
+                          )}
+                          {entry.method
+                            ? PAYMENT_LABEL[entry.method as PaymentMethod] || entry.method
+                            : "-"}
+                        </span>
+                      </td>
 
-                    {/* Ações */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          onClick={() => setSelectedEntry(entry)}
-                          title="Ver detalhes da movimentação"
+                      {/* Autor */}
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                        {entry.author}
+                      </td>
+
+                      {/* Valor */}
+                      <td className="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap">
+                        <span
+                          className={
+                            isEntrada
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-rose-600 dark:text-rose-400"
+                          }
                         >
-                          <FileText className="size-3" />
-                        </Button>
+                          {isEntrada ? "+ " : "- "}
+                          {formatBRL(entry.amount)}
+                        </span>
+                      </td>
 
-                        {entry.category !== "venda_comanda" && (
+                      {/* Ações */}
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-500/10"
-                            onClick={() => handleDeleteEntry(entry)}
-                            title="Estornar / Excluir movimentação"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => setSelectedEntry(entry)}
+                            title="Ver detalhes da movimentação"
                           >
-                            <Trash2 className="size-3" />
+                            <FileText className="size-3" />
                           </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {filteredEntries.length === 0 && (
+                          {entry.category !== "venda_comanda" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                              onClick={() => handleDeleteEntry(entry)}
+                              title="Cancelar lançamento"
+                            >
+                              <Trash2 className="size-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                    Nenhuma movimentação encontrada com os filtros selecionados.
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <div className="p-3 rounded-full bg-muted/60">
+                        <CalendarDays className="size-6 text-muted-foreground" />
+                      </div>
+                      <p className="font-semibold text-foreground text-sm">
+                        Nenhuma movimentação registrada nesta data
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {viewScope === "day"
+                          ? `Não há registros de caixa no dia ${selectedDate.toLocaleDateString("pt-BR")}. Você pode navegar pelas setas de data ou registrar um lançamento retroativo.`
+                          : "Nenhum registro encontrado com os filtros selecionados."}
+                      </p>
+                      {viewScope === "day" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 text-xs gap-1.5"
+                          onClick={() => handleOpenNewEntry("saida", "insumos", selectedDate)}
+                        >
+                          <Plus className="size-3.5" />
+                          Lançar Movimentação nesta Data
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
@@ -778,56 +1265,178 @@ export function CashFlowManager() {
         </div>
       </div>
 
-      {/* Modal: Nova Movimentação (Entrada / Saída / Sangria / Insumos) */}
-      <Dialog open={isNewEntryOpen} onOpenChange={setIsNewEntryOpen}>
+      {/* Modal: Detalhes do Lançamento */}
+      <Dialog open={!!selectedEntry} onOpenChange={(open) => !open && setSelectedEntry(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Registrar Movimentação de Caixa</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="size-4 text-primary" />
+              Comprovante de Lançamento
+            </DialogTitle>
             <DialogDescription>
-              Lance saídas operacionais, compras de emergência, diárias de extras, suprimentos ou
-              sangrias.
+              Identificador único e rastreabilidade da movimentação de caixa.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveEntry} className="space-y-4 pt-2">
+          {selectedEntry && (
+            <div className="space-y-3 pt-2 text-xs">
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">ID da Transação:</span>
+                <span className="font-mono font-medium">{selectedEntry.id}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Data e Horário:</span>
+                <span className="font-medium">
+                  {new Date(selectedEntry.timestamp).toLocaleString("pt-BR")}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Natureza / Tipo:</span>
+                <span className="capitalize font-semibold">
+                  {selectedEntry.type === "entrada" ? "Entrada (+)" : "Saída (-)"}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Categoria:</span>
+                <span>
+                  {CASH_FLOW_CATEGORY_LABEL[selectedEntry.category] ?? selectedEntry.category}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Descrição:</span>
+                <span className="font-medium text-right max-w-[240px]">
+                  {selectedEntry.description}
+                </span>
+              </div>
+              {selectedEntry.orderCode && (
+                <div className="flex justify-between py-1.5 border-b border-border/50">
+                  <span className="text-muted-foreground">Comanda de Origem:</span>
+                  <span className="font-semibold text-primary">{selectedEntry.orderCode}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Meio de Liquidação:</span>
+                <span className="capitalize font-medium">
+                  {selectedEntry.method
+                    ? PAYMENT_LABEL[selectedEntry.method as PaymentMethod] || selectedEntry.method
+                    : "Não informado"}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">Operador Responsável:</span>
+                <span className="font-medium">{selectedEntry.author}</span>
+              </div>
+              {selectedEntry.notes && (
+                <div className="flex justify-between py-1.5 border-b border-border/50">
+                  <span className="text-muted-foreground">Observações / NF:</span>
+                  <span className="italic text-right max-w-[240px]">{selectedEntry.notes}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-2 border-t border-border font-bold text-sm">
+                <span>Valor Liquidado:</span>
+                <span
+                  className={
+                    selectedEntry.type === "entrada"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-rose-600 dark:text-rose-400"
+                  }
+                >
+                  {selectedEntry.type === "entrada" ? "+ " : "- "}
+                  {formatBRL(selectedEntry.amount)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedEntry(null)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Nova Movimentação Manual */}
+      <Dialog open={isNewEntryOpen} onOpenChange={setIsNewEntryOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="size-4 text-primary" />
+              Registrar Movimentação de Caixa
+            </DialogTitle>
+            <DialogDescription>
+              Insira saídas (sangrias, insumos, despesas) ou entradas de troco e aportes no caixa.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveEntry} className="space-y-3 pt-2">
+            {/* Data da Movimentação */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Data da Movimentação</Label>
+                <span className="text-[10px] text-muted-foreground">
+                  {formDate === toISODate(new Date()) ? "Hoje" : "Lançamento Retroativo"}
+                </span>
+              </div>
+              <Input
+                type="date"
+                max={toISODate(new Date())}
+                className="h-9 text-xs"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                required
+              />
+            </div>
+
             {/* Tipo: Entrada ou Saída */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Tipo de Movimentação</Label>
+              <Label className="text-xs font-semibold">Tipo de Operação</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
                   variant={formType === "entrada" ? "default" : "outline"}
-                  className={`h-9 text-xs font-medium justify-center gap-1.5 ${
-                    formType === "entrada" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""
-                  }`}
+                  size="sm"
+                  className={
+                    formType === "entrada"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      : ""
+                  }
                   onClick={() => {
                     setFormType("entrada");
                     setFormCategory("suprimento");
                   }}
                 >
-                  <ArrowUpRight className="size-3.5" />
-                  Entrada (Aporte / Reforço)
+                  <ArrowUpRight className="size-4 mr-1.5" />
+                  Entrada (+)
                 </Button>
                 <Button
                   type="button"
                   variant={formType === "saida" ? "default" : "outline"}
-                  className={`h-9 text-xs font-medium justify-center gap-1.5 ${
-                    formType === "saida" ? "bg-rose-600 hover:bg-rose-700 text-white" : ""
-                  }`}
+                  size="sm"
+                  className={
+                    formType === "saida"
+                      ? "bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                      : ""
+                  }
                   onClick={() => {
                     setFormType("saida");
                     setFormCategory("insumos");
                   }}
                 >
-                  <ArrowDownRight className="size-3.5" />
-                  Saída (Despesa / Sangria)
+                  <ArrowDownRight className="size-4 mr-1.5" />
+                  Saída (-)
                 </Button>
               </div>
             </div>
 
             {/* Categoria */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Categoria</Label>
+              <Label className="text-xs font-semibold">Categoria Financeira</Label>
               <select
                 className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:ring-1 focus:ring-ring"
                 value={formCategory}
@@ -835,28 +1444,24 @@ export function CashFlowManager() {
               >
                 {formType === "entrada" ? (
                   <>
-                    <option value="suprimento">Suprimento de Troco / Reforço de Gaveta</option>
-                    <option value="outros">Outras Entradas / Aportes</option>
+                    <option value="suprimento">Suprimento de Troco / Aporte</option>
+                    <option value="outros">Outras Entradas</option>
                   </>
                 ) : (
                   <>
-                    <option value="sangria">Sangria de Caixa (Retirada para cofre / banco)</option>
-                    <option value="insumos">
-                      Compra de Insumos / Emergência (Gelo, gás, hortifruti)
-                    </option>
-                    <option value="pessoal_extra">
-                      Diária de Extra / Freelancer (Garçom, cozinha)
-                    </option>
-                    <option value="manutencao">Manutenção & Reparos do Salão/Bar</option>
-                    <option value="servicos">Serviços Operacionais / Entregadores</option>
-                    <option value="outros">Outras Despesas</option>
+                    <option value="sangria">Sangria (Retirada para Cofre)</option>
+                    <option value="insumos">Compra Emergencial de Insumos</option>
+                    <option value="pessoal_extra">Diária de Garçom / Pessoal Extra</option>
+                    <option value="manutencao">Manutenção & Reparos</option>
+                    <option value="servicos">Serviços Operacionais</option>
+                    <option value="outros">Outras Saídas</option>
                   </>
                 )}
               </select>
             </div>
 
-            {/* Valor (R$) e Meio de Pagamento */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Valor e Forma de Pagamento */}
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Valor (R$)</Label>
                 <Input
@@ -872,7 +1477,7 @@ export function CashFlowManager() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Forma de Pagamento</Label>
+                <Label className="text-xs font-semibold">Meio de Liquidação</Label>
                 <select
                   className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs text-foreground focus:ring-1 focus:ring-ring"
                   value={formMethod}
@@ -937,7 +1542,11 @@ export function CashFlowManager() {
                 Fechamento de Caixa · Relatório Z
               </DialogTitle>
               <Badge variant="outline" className="text-[10px]">
-                Turno Atual
+                {viewScope === "day" && isToday(selectedDate)
+                  ? "Turno Atual"
+                  : viewScope === "day"
+                    ? `Dia: ${selectedDate.toLocaleDateString("pt-BR")}`
+                    : "Consolidado"}
               </Badge>
             </div>
             <DialogDescription>
@@ -955,8 +1564,13 @@ export function CashFlowManager() {
                 </p>
               </div>
               <div className="text-right text-muted-foreground text-[11px]">
-                <p>Data: {new Date().toLocaleDateString("pt-BR")}</p>
-                <p>Hora: {new Date().toLocaleTimeString("pt-BR")}</p>
+                <p className="font-semibold text-foreground">
+                  Data:{" "}
+                  {viewScope === "day"
+                    ? selectedDate.toLocaleDateString("pt-BR")
+                    : "Período Consolidado"}
+                </p>
+                <p>Emitido às: {new Date().toLocaleTimeString("pt-BR")}</p>
               </div>
             </div>
 
@@ -1005,7 +1619,7 @@ export function CashFlowManager() {
             {/* Resumo de Saídas */}
             <div className="space-y-2 border-t border-border pt-3">
               <h4 className="font-semibold uppercase tracking-wider text-[11px] text-muted-foreground">
-                Saídas e Deduções do Turno
+                Saídas e Deduções
               </h4>
               <div className="space-y-1">
                 <div className="flex justify-between py-1 border-b border-border/40">
@@ -1048,10 +1662,10 @@ export function CashFlowManager() {
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 flex justify-between items-center">
               <div>
                 <p className="font-bold text-emerald-900 dark:text-emerald-200">
-                  Resultado Líquido do Turno:
+                  Resultado Líquido do Período:
                 </p>
                 <p className="text-[10px] text-emerald-800/80 dark:text-emerald-300/80">
-                  Lucro operacional disponível
+                  Superávit financeiro total apurado
                 </p>
               </div>
               <span className="text-lg font-extrabold text-emerald-950 dark:text-emerald-100">
@@ -1060,101 +1674,21 @@ export function CashFlowManager() {
             </div>
           </div>
 
-          <DialogFooter className="pt-2">
-            <Button variant="outline" size="sm" onClick={() => setIsReportOpen(false)}>
-              Fechar
-            </Button>
+          <DialogFooter className="pt-3 flex sm:justify-between items-center">
             <Button
+              type="button"
+              variant="outline"
               size="sm"
-              className="gap-1.5"
               onClick={() => {
-                toast.success("Relatório pronto para conferência e impressão.");
                 window.print();
               }}
+              className="gap-1.5"
             >
               <Printer className="size-3.5" />
-              Imprimir Relatório
+              Imprimir Relatório Z
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal: Detalhes de Lançamento */}
-      <Dialog open={!!selectedEntry} onOpenChange={(open) => !open && setSelectedEntry(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Movimentação</DialogTitle>
-            <DialogDescription>Informações completas registradas no livro caixa.</DialogDescription>
-          </DialogHeader>
-
-          {selectedEntry && (
-            <div className="space-y-3 pt-1 text-xs">
-              <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">ID do Registro:</span>
-                  <span className="font-mono">{selectedEntry.id}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Data e Horário:</span>
-                  <span>{new Date(selectedEntry.timestamp).toLocaleString("pt-BR")}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Tipo:</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      selectedEntry.type === "entrada"
-                        ? "text-emerald-600 border-emerald-500/30"
-                        : "text-rose-600 border-rose-500/30"
-                    }
-                  >
-                    {selectedEntry.type === "entrada" ? "Entrada (+)" : "Saída (-)"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Categoria:</span>
-                  <span className="font-semibold">
-                    {CASH_FLOW_CATEGORY_LABEL[selectedEntry.category] ?? selectedEntry.category}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Forma de Pagamento:</span>
-                  <span className="capitalize">{selectedEntry.method || "Outro"}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Registrado por:</span>
-                  <span className="font-medium">{selectedEntry.author}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-border font-bold text-sm">
-                  <span>Valor:</span>
-                  <span
-                    className={
-                      selectedEntry.type === "entrada" ? "text-emerald-600" : "text-rose-600"
-                    }
-                  >
-                    {selectedEntry.type === "entrada" ? "+ " : "- "}
-                    {formatBRL(selectedEntry.amount)}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-semibold text-muted-foreground">Descrição / Motivo:</p>
-                <p className="text-foreground mt-0.5">{selectedEntry.description}</p>
-              </div>
-
-              {selectedEntry.notes && (
-                <div>
-                  <p className="font-semibold text-muted-foreground">Observações / Comprovante:</p>
-                  <p className="text-foreground mt-0.5 italic">{selectedEntry.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter className="pt-2">
-            <Button size="sm" onClick={() => setSelectedEntry(null)}>
-              Fechar
+            <Button type="button" size="sm" onClick={() => setIsReportOpen(false)}>
+              Concluir Conferência
             </Button>
           </DialogFooter>
         </DialogContent>

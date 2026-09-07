@@ -96,6 +96,7 @@ export interface NewCashFlowInput {
   notes?: string;
   author?: string;
   loja_id?: string;
+  timestamp?: number;
 }
 
 export interface Session {
@@ -176,6 +177,7 @@ interface KeepServContext {
   ) => void;
   addCashFlowEntry: (input: NewCashFlowInput) => CashFlowEntry;
   deleteCashFlowEntry: (id: string) => void;
+  resetCashFlowToDefault: () => void;
 
   // Cardápio
   products: MenuItem[];
@@ -383,7 +385,20 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
 
   // PEDIDOS (com isolamento por loja_id)
   const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [allCashFlowEntries, setAllCashFlowEntries] = useState<CashFlowEntry[]>([]);
+  const [allCashFlowEntries, setAllCashFlowEntries] = useState<CashFlowEntry[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("keepserv_cashflow_v5");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar fluxo de caixa do localStorage", e);
+      }
+    }
+    return [];
+  });
   const [now, setNow] = useState(() => Date.now());
 
   // Seed de pedidos e caixa
@@ -392,8 +407,22 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
     setNow(t);
     const seedOrders = buildSeedOrders(t);
     setAllOrders(seedOrders);
-    setAllCashFlowEntries(buildSeedCashFlow(t, seedOrders));
+    setAllCashFlowEntries((prev) => {
+      // Se já tem histórico persistido com pelo menos 10 itens, mantém; senão carrega o seed rico
+      if (prev && prev.length >= 10) return prev;
+      return buildSeedCashFlow(t, seedOrders);
+    });
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && allCashFlowEntries.length > 0) {
+      try {
+        localStorage.setItem("keepserv_cashflow_v5", JSON.stringify(allCashFlowEntries));
+      } catch (e) {
+        console.error("Erro ao salvar fluxo de caixa no localStorage", e);
+      }
+    }
+  }, [allCashFlowEntries]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -1223,7 +1252,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
 
   const addCashFlowEntry = useCallback(
     (input: NewCashFlowInput) => {
-      const t = Date.now();
+      const t = input.timestamp || Date.now();
       const targetLojaId = input.loja_id || currentLojaId || "loja-1";
 
       const entry: CashFlowEntry = {
@@ -1239,7 +1268,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         notes: input.notes,
       };
 
-      setAllCashFlowEntries((prev) => [entry, ...prev]);
+      setAllCashFlowEntries((prev) => [entry, ...prev].sort((a, b) => b.timestamp - a.timestamp));
       return entry;
     },
     [session?.name, currentLojaId],
@@ -1248,6 +1277,19 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
   const deleteCashFlowEntry = useCallback((id: string) => {
     setAllCashFlowEntries((prev) => prev.filter((e) => e.id !== id));
   }, []);
+
+  const resetCashFlowToDefault = useCallback(() => {
+    const t = Date.now();
+    const fresh = buildSeedCashFlow(t, allOrders);
+    setAllCashFlowEntries(fresh);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("keepserv_cashflow_v5", JSON.stringify(fresh));
+      } catch (e) {
+        console.error("Erro ao resetar fluxo de caixa", e);
+      }
+    }
+  }, [allOrders]);
 
   const requestCleanup = useCallback(
     (orderId: string) => {
@@ -1648,6 +1690,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       setCustomerInfo,
       addCashFlowEntry,
       deleteCashFlowEntry,
+      resetCashFlowToDefault,
 
       products,
       addProduct,
@@ -1703,6 +1746,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       setCustomerInfo,
       addCashFlowEntry,
       deleteCashFlowEntry,
+      resetCashFlowToDefault,
 
       products,
       addProduct,

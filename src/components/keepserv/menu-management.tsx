@@ -182,9 +182,7 @@ export function MenuManagement() {
 
     if (existingIndex >= 0) {
       const updated = [...formRecipeIngredients];
-      updated[existingIndex].quantity = Number(
-        (updated[existingIndex].quantity + qty).toFixed(3),
-      );
+      updated[existingIndex].quantity = Number((updated[existingIndex].quantity + qty).toFixed(3));
       setFormRecipeIngredients(updated);
       toast.info(`Quantidade de "${stockItem.name}" atualizada na receita.`);
     } else {
@@ -292,8 +290,8 @@ export function MenuManagement() {
           </div>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
             Cadastre os itens servidos aos clientes e defina como cada um interage com o estoque:
-            consumo direto de produtos prontos (bebidas/latas), consumo de matérias-primas por receita
-            (carnes/ingredientes) ou sem dedução de estoque.
+            consumo direto de produtos prontos (bebidas/latas), consumo de matérias-primas por
+            receita (carnes/ingredientes) ou sem dedução de estoque.
           </p>
         </div>
 
@@ -383,7 +381,9 @@ export function MenuManagement() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">Tipo de Consumo:</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              Tipo de Consumo:
+            </span>
             <Select
               value={consumptionFilter}
               onValueChange={(val: "todos" | "none" | "direct" | "recipe") =>
@@ -445,7 +445,9 @@ export function MenuManagement() {
                   </div>
 
                   {/* Nome e Descrição */}
-                  <h3 className="font-semibold text-sm text-foreground leading-snug">{prod.name}</h3>
+                  <h3 className="font-semibold text-sm text-foreground leading-snug">
+                    {prod.name}
+                  </h3>
                   {prod.description && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                       {prod.description}
@@ -588,7 +590,9 @@ export function MenuManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <UtensilsCrossed className="size-5 text-primary" />
-              {editingProduct ? `Editar Produto: ${editingProduct.name}` : "Novo Produto no Cardápio"}
+              {editingProduct
+                ? `Editar Produto: ${editingProduct.name}`
+                : "Novo Produto no Cardápio"}
             </DialogTitle>
             <DialogDescription className="text-xs">
               Configure as informações de venda do item e especifique se o produto consome
@@ -684,13 +688,11 @@ export function MenuManagement() {
                   <Label htmlFor="prod-high" className="text-xs font-medium cursor-pointer">
                     Item em Destaque
                   </Label>
-                  <p className="text-[10px] text-muted-foreground">Exibe badge especial no cardápio</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Exibe badge especial no cardápio
+                  </p>
                 </div>
-                <Switch
-                  id="prod-high"
-                  checked={formHighlight}
-                  onCheckedChange={setFormHighlight}
-                />
+                <Switch id="prod-high" checked={formHighlight} onCheckedChange={setFormHighlight} />
               </div>
             </div>
 
@@ -702,7 +704,8 @@ export function MenuManagement() {
                   Relação com o Estoque & Almoxarifado *
                 </Label>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Selecione se este produto vai consumir diretamente do estoque ou por matéria-prima.
+                  Selecione se este produto vai consumir diretamente do estoque ou por
+                  matéria-prima.
                 </p>
               </div>
 
@@ -773,10 +776,7 @@ export function MenuManagement() {
                     <Label htmlFor="direct-stock" className="text-xs font-semibold">
                       Item de Estoque Pronto para Consumo *
                     </Label>
-                    <Select
-                      value={formLinkedStockId}
-                      onValueChange={setFormLinkedStockId}
-                    >
+                    <Select value={formLinkedStockId} onValueChange={setFormLinkedStockId}>
                       <SelectTrigger id="direct-stock" className="h-9 text-xs">
                         <SelectValue placeholder="Selecione a bebida ou produto acabado..." />
                       </SelectTrigger>
@@ -842,10 +842,7 @@ export function MenuManagement() {
                   <div className="flex flex-col sm:flex-row gap-2 items-end bg-muted/40 p-2.5 rounded-lg">
                     <div className="flex-1 space-y-1 w-full">
                       <Label className="text-[11px]">Matéria-Prima do Almoxarifado</Label>
-                      <Select
-                        value={selectedIngStockId}
-                        onValueChange={setSelectedIngStockId}
-                      >
+                      <Select value={selectedIngStockId} onValueChange={setSelectedIngStockId}>
                         <SelectTrigger className="h-8 text-xs bg-background">
                           <SelectValue placeholder="Escolha a matéria-prima..." />
                         </SelectTrigger>
@@ -956,9 +953,8 @@ export function MenuManagement() {
               Excluir Produto do Cardápio
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Tem certeza que deseja excluir o produto{" "}
-              <strong>"{productToDelete?.name}"</strong>? O item será removido do cardápio e não
-              aparecerá mais para novos pedidos.
+              Tem certeza que deseja excluir o produto <strong>"{productToDelete?.name}"</strong>? O
+              item será removido do cardápio e não aparecerá mais para novos pedidos.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

@@ -81,15 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Keep Serv" },
       {
         name: "description",
-        content:
-          "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
+        content: "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
       },
       { name: "author", content: "Keep Serv" },
       { property: "og:title", content: "Keep Serv" },
       {
         property: "og:description",
-        content:
-          "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
+        content: "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

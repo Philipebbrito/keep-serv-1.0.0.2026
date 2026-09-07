@@ -94,7 +94,7 @@ export function StockManagement() {
 
   // Estatísticas de Estoque
   const stats = useMemo(() => {
-    let totalItems = stockItems.length;
+    const totalItems = stockItems.length;
     let readyItemsCount = 0;
     let rawMaterialsCount = 0;
     let lowStockCount = 0;
@@ -175,7 +175,9 @@ export function StockManagement() {
   const openMovementModal = (item: StockItem, type: "entrada" | "saida" | "ajuste") => {
     setMovementItem(item);
     setMovementType(type);
-    setMovementQty(type === "entrada" ? "10" : type === "saida" ? "1" : item.currentStock.toString());
+    setMovementQty(
+      type === "entrada" ? "10" : type === "saida" ? "1" : item.currentStock.toString(),
+    );
     setMovementReason("");
   };
 
@@ -299,7 +301,9 @@ export function StockManagement() {
             size="sm"
             onClick={() => {
               if (
-                confirm("Deseja redefinir o catálogo de estoque para os dados padrões de demonstração?")
+                confirm(
+                  "Deseja redefinir o catálogo de estoque para os dados padrões de demonstração?",
+                )
               ) {
                 resetStockToDefault();
                 toast.info("Estoque redefinido para o padrão.");
@@ -368,7 +372,9 @@ export function StockManagement() {
             <AlertTriangle
               className={cn(
                 "size-4",
-                stats.lowStockCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
+                stats.lowStockCount > 0
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground",
               )}
             />
           </div>
@@ -459,9 +465,7 @@ export function StockManagement() {
           {/* Filtro por Situação */}
           <Select
             value={statusFilter}
-            onValueChange={(val: "todos" | "baixo" | "esgotado" | "normal") =>
-              setStatusFilter(val)
-            }
+            onValueChange={(val: "todos" | "baixo" | "esgotado" | "normal") => setStatusFilter(val)}
           >
             <SelectTrigger className="w-[145px] h-9 text-xs">
               <SelectValue placeholder="Situação" />
@@ -1081,8 +1085,8 @@ export function StockManagement() {
               Excluir Item de Estoque
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Tem certeza que deseja excluir o item{" "}
-              <strong>"{itemToDelete?.name}"</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o item <strong>"{itemToDelete?.name}"</strong>? Esta
+              ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

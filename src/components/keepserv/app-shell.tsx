@@ -1,5 +1,13 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChefHat, LayoutDashboard, LogOut, KanbanSquare, Wallet } from "lucide-react";
+import {
+  ChefHat,
+  ExternalLink,
+  KanbanSquare,
+  LayoutDashboard,
+  LogOut,
+  QrCode,
+  Wallet,
+} from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useKeepServ } from "@/lib/keepserv/store";
@@ -64,8 +72,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden text-right leading-tight sm:block">
+          <div className="ml-auto flex items-center gap-2.5">
+            <Link
+              to="/cliente"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
+              title="Abrir autoatendimento do cliente em nova aba"
+            >
+              <QrCode className="size-3.5 text-primary" />
+              <span className="hidden md:inline">Visão do Cliente</span>
+              <ExternalLink className="size-3 opacity-60" />
+            </Link>
+
+            <div className="hidden text-right leading-tight sm:block pl-1">
               <p className="text-sm font-semibold">{session.name}</p>
               <p className="text-xs text-muted-foreground">{ROLE_LABEL[session.role]}</p>
             </div>

@@ -204,7 +204,13 @@ const ChartTooltipContent = React.forwardRef<
                   )}
                 >
                   {formatter && item?.value !== undefined && item.name && item.payload ? (
-                    formatter(item.value, item.name, { value: item.value, name: item.name, item, index, payload: item.payload })
+                    formatter(item.value, item.name, {
+                      value: item.value,
+                      name: item.name,
+                      item,
+                      index,
+                      payload: item.payload,
+                    })
                   ) : (
                     <>
                       {itemConfig?.icon ? (
@@ -266,7 +272,12 @@ const ChartLegend = RechartsPrimitive.Legend;
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
-    payload?: { value?: string | number; type?: string; color?: string; dataKey?: string | number }[];
+    payload?: {
+      value?: string | number;
+      type?: string;
+      color?: string;
+      dataKey?: string | number;
+    }[];
     verticalAlign?: "top" | "bottom" | "middle";
     hideIcon?: boolean;
     nameKey?: string;

@@ -1,5 +1,14 @@
 import type { OrderItem } from "./types";
 
+export type MenuCategory = OrderItem["category"];
+
+export const MENU_CATEGORIES: { id: MenuCategory; name: string }[] = [
+  { id: "prato", name: "Pratos Principais" },
+  { id: "entrada", name: "Entradas & Petiscos" },
+  { id: "bebida", name: "Bebidas" },
+  { id: "sobremesa", name: "Sobremesas" },
+];
+
 export type StockConsumptionType = "none" | "direct" | "recipe";
 
 export interface RecipeIngredient {

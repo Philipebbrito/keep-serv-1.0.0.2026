@@ -340,7 +340,9 @@ export interface ProductStockStatus {
   consumptionType: "none" | "direct" | "recipe";
   isOutOfStock: boolean;
   isLowStock: boolean;
+  available: boolean;
   availableUnits: number | null;
+  maxPortions: number | null;
   detailLabel: string;
 }
 
@@ -361,7 +363,9 @@ export function getProductStockStatus(
       consumptionType: "none",
       isOutOfStock: false,
       isLowStock: false,
+      available: true,
       availableUnits: null,
+      maxPortions: null,
       detailLabel: "Sem consumo de estoque",
     };
   }
@@ -380,7 +384,9 @@ export function getProductStockStatus(
           consumptionType: "direct",
           isOutOfStock: out,
           isLowStock: !out && product.stock <= (product.minStock || 5),
+          available: !out,
           availableUnits: product.stock,
+          maxPortions: product.stock,
           detailLabel: `${product.stock} ${product.unit || "un"} em estoque`,
         };
       }
@@ -389,12 +395,15 @@ export function getProductStockStatus(
         consumptionType: "direct",
         isOutOfStock: false,
         isLowStock: false,
+        available: true,
         availableUnits: null,
+        maxPortions: null,
         detailLabel: "Item de estoque não vinculado",
       };
     }
 
-    const qtyPerSale = product.directStockQty && product.directStockQty > 0 ? product.directStockQty : 1;
+    const qtyPerSale =
+      product.directStockQty && product.directStockQty > 0 ? product.directStockQty : 1;
     const available = Math.floor(stockItem.currentStock / qtyPerSale);
     const isOutOfStock = available <= 0;
     const isLowStock = !isOutOfStock && stockItem.currentStock <= stockItem.minStock;
@@ -404,13 +413,19 @@ export function getProductStockStatus(
       consumptionType: "direct",
       isOutOfStock,
       isLowStock,
+      available: !isOutOfStock,
       availableUnits: available,
+      maxPortions: available,
       detailLabel: `${stockItem.currentStock} ${stockItem.unit} (${stockItem.name})`,
     };
   }
 
   // 3. Consumo de Matéria-Prima / Receita
-  if (consumption === "recipe" && product.recipeIngredients && product.recipeIngredients.length > 0) {
+  if (
+    consumption === "recipe" &&
+    product.recipeIngredients &&
+    product.recipeIngredients.length > 0
+  ) {
     let minAvailablePortions = Infinity;
     let anyLowStock = false;
     let missingOrZero = false;
@@ -440,7 +455,9 @@ export function getProductStockStatus(
       consumptionType: "recipe",
       isOutOfStock,
       isLowStock,
+      available: !isOutOfStock,
       availableUnits: minAvailablePortions,
+      maxPortions: minAvailablePortions,
       detailLabel: `${minAvailablePortions} porções possíveis pelos insumos`,
     };
   }
@@ -450,7 +467,9 @@ export function getProductStockStatus(
     consumptionType: "none",
     isOutOfStock: false,
     isLowStock: false,
+    available: true,
     availableUnits: null,
+    maxPortions: null,
     detailLabel: "Disponível",
   };
 }

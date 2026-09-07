@@ -374,11 +374,11 @@ export function DigitalMenuView({
                   : "bg-background text-muted-foreground",
               )}
             >
-              {MENU.length}
+              {products.filter((i) => i.active !== false).length}
             </span>
           </button>
           {CATEGORY_ORDER.map((cat) => {
-            const count = MENU.filter((i) => i.category === cat).length;
+            const count = products.filter((i) => i.active !== false && i.category === cat).length;
             const isSelected = selectedCategory === cat;
             return (
               <button

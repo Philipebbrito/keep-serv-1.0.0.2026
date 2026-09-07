@@ -1,0 +1,6 @@
+{
+  "name": "KeepServ",
+  "description": "Sistema de gestão de restaurantes e comandas com controle de estoque e cardápio",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

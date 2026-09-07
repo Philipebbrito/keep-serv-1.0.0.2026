@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
+  Boxes,
   CheckCheck,
   Clock3,
   Eye,
@@ -31,13 +32,14 @@ import {
   AreaChart,
 } from "recharts";
 import { AppShell } from "@/components/keepserv/app-shell";
-import { BillPrintDialog } from "@/components/keepserv/bill-print-dialog.tsx";
-import { CashFlowManager } from "@/components/keepserv/cash-flow-manager.tsx";
-import { MenuStockManagement } from "@/components/keepserv/menu-stock-management.tsx";
-import { OrderDialog } from "@/components/keepserv/order-dialog.tsx";
-import { PaymentDialog } from "@/components/keepserv/payment-dialog.tsx";
-import { TeamManagement } from "@/components/keepserv/team-management.tsx";
-import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard.tsx";
+import { BillPrintDialog } from "@/components/keepserv/bill-print-dialog";
+import { CashFlowManager } from "@/components/keepserv/cash-flow-manager";
+import { MenuManagement } from "@/components/keepserv/menu-management";
+import { StockManagement } from "@/components/keepserv/stock-management";
+import { OrderDialog } from "@/components/keepserv/order-dialog";
+import { PaymentDialog } from "@/components/keepserv/payment-dialog";
+import { TeamManagement } from "@/components/keepserv/team-management";
+import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -148,20 +150,29 @@ const tooltipStyle = {
 };
 
 function DashboardPage() {
-  const { orders, now, session, users, products, requestCleanup, completeCleanup, printBill } =
-    useKeepServ();
+  const {
+    orders,
+    now,
+    session,
+    users,
+    products,
+    stockItems,
+    requestCleanup,
+    completeCleanup,
+    printBill,
+  } = useKeepServ();
   const isWaiter = session?.role === "garcom";
   const [managerView, setManagerView] = useState<"gestor" | "garcom">(
     isWaiter ? "garcom" : "gestor",
   );
   const [gestorTab, setGestorTab] = useState<
-    "fluxo_caixa" | "operacao" | "cardapio_estoque" | "equipe"
-  >("fluxo_caixa");
+    "fluxo_caixa" | "operacao" | "cardapio" | "estoque" | "equipe"
+  >("operacao");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [payOrder, setPayOrder] = useState<Order | null>(null);
 
-  const lowStockAlertCount = products.filter((p) => p.trackStock && p.stock <= p.minStock).length;
+  const lowStockAlertCount = stockItems.filter((s) => s.currentStock <= s.minStock).length;
 
   // Se o usuário logado for perfil garçom, ou se o gestor selecionou a visão do garçom
   if (isWaiter || managerView === "garcom") {
@@ -220,24 +231,9 @@ function DashboardPage() {
         </Button>
       </div>
 
-      {/* Navegação por Abas do Gestor: Fluxo de Caixa vs Operação vs Equipe */}
+      {/* Navegação por Abas do Gestor: Operação vs Cardápio vs Estoque vs Fluxo de Caixa vs Equipe */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60">
-          <button
-            type="button"
-            onClick={() => setGestorTab("fluxo_caixa")}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
-              gestorTab === "fluxo_caixa"
-                ? "bg-card text-foreground shadow-sm border border-border/80"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Wallet className="size-3.5 text-accent" />
-            <span>Fluxo de Caixa & Finanças</span>
-            <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
-          </button>
-
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60">
           <button
             type="button"
             onClick={() => setGestorTab("operacao")}
@@ -257,6 +253,61 @@ function DashboardPage() {
 
           <button
             type="button"
+            onClick={() => setGestorTab("cardapio")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+              gestorTab === "cardapio"
+                ? "bg-card text-foreground shadow-sm border border-border/80"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <UtensilsCrossed className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Cardápio</span>
+            <Badge variant="secondary" className="ml-1 text-[9px] py-0 px-1.5 font-normal">
+              {products.length} itens
+            </Badge>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setGestorTab("estoque")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+              gestorTab === "estoque"
+                ? "bg-card text-foreground shadow-sm border border-border/80"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Boxes className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Estoque & Insumos</span>
+            <Badge variant="secondary" className="ml-1 text-[9px] py-0 px-1.5 font-normal">
+              {stockItems.length} itens
+            </Badge>
+            {lowStockAlertCount > 0 && (
+              <span
+                className="flex size-2 rounded-full bg-amber-500 animate-pulse ml-0.5"
+                title={`${lowStockAlertCount} itens com estoque baixo/esgotado`}
+              />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setGestorTab("fluxo_caixa")}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+              gestorTab === "fluxo_caixa"
+                ? "bg-card text-foreground shadow-sm border border-border/80"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Wallet className="size-3.5 text-accent" />
+            <span>Fluxo de Caixa & Finanças</span>
+            <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => setGestorTab("equipe")}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
@@ -271,44 +322,25 @@ function DashboardPage() {
               {users.length} membros
             </Badge>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setGestorTab("cardapio_estoque")}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
-              gestorTab === "cardapio_estoque"
-                ? "bg-card text-foreground shadow-sm border border-border/80"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <UtensilsCrossed className="size-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Cardápio & Estoque</span>
-            <Badge variant="secondary" className="ml-1 text-[9px] py-0 px-1.5 font-normal">
-              {products.length} itens
-            </Badge>
-            {lowStockAlertCount > 0 && (
-              <span
-                className="flex size-2 rounded-full bg-amber-500 animate-pulse ml-0.5"
-                title={`${lowStockAlertCount} itens com estoque baixo/esgotado`}
-              />
-            )}
-          </button>
         </div>
 
         <span className="text-xs text-muted-foreground hidden md:inline">
-          {gestorTab === "fluxo_caixa"
-            ? "Módulo de conciliação financeira, sangrias e gaveta"
-            : gestorTab === "equipe"
-              ? "Cadastro de garçons, cozinha, caixas e alteração de senhas"
-              : gestorTab === "cardapio_estoque"
-                ? "Cadastro de produtos, preços, reposição e alertas de estoque"
-                : "Módulo de comandas, tempos de preparo e mesas"}
+          {gestorTab === "cardapio"
+            ? "Gestão do cardápio e configuração de consumo do estoque"
+            : gestorTab === "estoque"
+              ? "Gestão de matérias-primas, bebidas prontas e inventário"
+              : gestorTab === "fluxo_caixa"
+                ? "Módulo de conciliação financeira, sangrias e gaveta"
+                : gestorTab === "equipe"
+                  ? "Cadastro de garçons, cozinha, caixas e alteração de senhas"
+                  : "Módulo de comandas, tempos de preparo e mesas"}
         </span>
       </div>
 
-      {gestorTab === "cardapio_estoque" ? (
-        <MenuStockManagement />
+      {gestorTab === "cardapio" ? (
+        <MenuManagement />
+      ) : gestorTab === "estoque" ? (
+        <StockManagement />
       ) : gestorTab === "equipe" ? (
         <TeamManagement />
       ) : gestorTab === "fluxo_caixa" ? (

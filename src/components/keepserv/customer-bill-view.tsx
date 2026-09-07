@@ -463,9 +463,31 @@ export function CustomerBillView({ orderId }: CustomerBillViewProps) {
               <li>Certifique-se de que a comanda da sua mesa já foi iniciada pelo atendente.</li>
             </ul>
           </div>
-          <Button className="w-full mt-6 text-xs h-10" onClick={() => window.location.reload()}>
-            Tentar Novamente
-          </Button>
+          <div className="mt-6 flex flex-col gap-2">
+            <Button className="w-full text-xs h-10" onClick={() => window.location.reload()}>
+              Tentar Novamente
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="w-full text-xs h-9"
+                onClick={() => {
+                  window.location.href = "/cliente";
+                }}
+              >
+                Área do Cliente
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-xs h-9"
+                onClick={() => {
+                  window.location.href = "/cardapio";
+                }}
+              >
+                Ver Cardápio
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );

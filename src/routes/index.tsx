@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   ChefHat,
   ClipboardList,
   LineChart,
   Lock,
   Mail,
+  QrCode,
   UtensilsCrossed,
   Wallet,
 } from "lucide-react";
@@ -204,6 +205,23 @@ function LoginPage() {
               Entrar como {ROLES.find((r) => r.id === role)?.label}
             </Button>
           </form>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
+              <span className="bg-card px-2 text-muted-foreground">ou autoatendimento</span>
+            </div>
+          </div>
+
+          <Link
+            to="/cliente"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-xs font-semibold text-foreground transition-all hover:bg-muted hover:border-primary/40 shadow-xs"
+          >
+            <QrCode className="size-4 text-primary" />
+            <span>Acessar como Cliente (Cardápio / Comanda)</span>
+          </Link>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Ambiente de demonstração: qualquer senha funciona.

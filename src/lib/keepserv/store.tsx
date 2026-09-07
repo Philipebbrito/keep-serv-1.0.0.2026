@@ -811,9 +811,12 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       directStockQty:
         input.directStockQty && input.directStockQty > 0 ? Number(input.directStockQty) : 1,
       recipeIngredients: input.recipeIngredients,
-      stock: input.stock !== undefined ? Math.max(0, Math.round(Number(input.stock) || 0)) : undefined,
+      stock:
+        input.stock !== undefined ? Math.max(0, Math.round(Number(input.stock) || 0)) : undefined,
       minStock:
-        input.minStock !== undefined ? Math.max(0, Math.round(Number(input.minStock) || 5)) : undefined,
+        input.minStock !== undefined
+          ? Math.max(0, Math.round(Number(input.minStock) || 5))
+          : undefined,
       trackStock: input.stockConsumption !== "none",
       unit: input.unit?.trim() || "un",
       updatedAt: Date.now(),
@@ -860,7 +863,9 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         prev.map((item) => {
           if (item.id !== id) return item;
           const newStock =
-            mode === "delta" ? Math.max(0, (item.stock ?? 0) + deltaOrExact) : Math.max(0, deltaOrExact);
+            mode === "delta"
+              ? Math.max(0, (item.stock ?? 0) + deltaOrExact)
+              : Math.max(0, deltaOrExact);
           return {
             ...item,
             stock: Math.round(newStock),
@@ -940,13 +945,9 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
               ? Math.max(0, Number(data.currentStock))
               : item.currentStock,
           minStock:
-            data.minStock !== undefined
-              ? Math.max(0, Number(data.minStock))
-              : item.minStock,
+            data.minStock !== undefined ? Math.max(0, Number(data.minStock)) : item.minStock,
           costPrice:
-            data.costPrice !== undefined
-              ? Math.max(0, Number(data.costPrice))
-              : item.costPrice,
+            data.costPrice !== undefined ? Math.max(0, Number(data.costPrice)) : item.costPrice,
           updatedAt: Date.now(),
         };
       }),

@@ -236,11 +236,13 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
                                 </p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-2">
                                   <span>R$ {menuItem.price.toFixed(2).replace(".", ",")}</span>
-                                  {stockStatus.available && !isLowStock && stockStatus.maxPortions !== null && (
-                                    <span className="text-[11px] text-muted-foreground/70">
-                                      · {stockStatus.maxPortions} disponíveis
-                                    </span>
-                                  )}
+                                  {stockStatus.available &&
+                                    !isLowStock &&
+                                    stockStatus.maxPortions !== null && (
+                                      <span className="text-[11px] text-muted-foreground/70">
+                                        · {stockStatus.maxPortions} disponíveis
+                                      </span>
+                                    )}
                                   {menuItem.stockConsumption === "recipe" && (
                                     <span className="text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1 py-0.2 rounded">
                                       Receita

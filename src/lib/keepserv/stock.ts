@@ -16,6 +16,7 @@ export interface StockMovement {
 
 export interface StockItem {
   id: string;
+  loja_id?: string; // Isolamento multi-tenant
   name: string;
   type: StockItemType;
   currentStock: number;
@@ -29,6 +30,7 @@ export interface StockItem {
 }
 
 export type NewStockItemInput = {
+  loja_id?: string;
   name: string;
   type: StockItemType;
   currentStock: number;

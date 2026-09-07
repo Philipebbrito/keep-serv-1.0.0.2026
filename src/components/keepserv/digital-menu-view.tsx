@@ -444,12 +444,50 @@ export function DigitalMenuView({
                 key={item.id}
                 onClick={() => !isOutOfStock && handleOpenCustomize(item)}
                 className={cn(
-                  "group rounded-2xl border border-border bg-card p-3.5 transition-all duration-200 flex flex-col justify-between hover:border-primary/50 hover:shadow-xs active:scale-[0.99]",
+                  "group rounded-2xl border border-border bg-card p-3.5 transition-all duration-200 flex flex-col justify-between hover:border-primary/50 hover:shadow-xs active:scale-[0.99] overflow-hidden",
                   isOutOfStock ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
                   inCart && "border-primary/60 bg-primary/[0.025] ring-1 ring-primary/20",
                 )}
               >
                 <div>
+                  {/* Foto do Prato */}
+                  {item.image && (
+                    <div className="relative mb-3 -mx-3.5 -mt-3.5 h-44 sm:h-48 overflow-hidden bg-muted/40 border-b border-border/60">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                      />
+                      {/* Badges sobre a foto */}
+                      <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
+                        {item.highlight === "mais_pedido" && !isOutOfStock && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-amber-950 shadow-xs">
+                            <Flame className="size-2.5" /> Mais pedido
+                          </span>
+                        )}
+                        {item.highlight === "chef" && !isOutOfStock && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-xs">
+                            <ChefHat className="size-2.5" /> Sugestão do Chef
+                          </span>
+                        )}
+                        {item.highlight === "vegetariano" && !isOutOfStock && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                            <Leaf className="size-2.5" /> Veg
+                          </span>
+                        )}
+                      </div>
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-rose-500/90 text-white uppercase tracking-wider">
+                            Esgotado
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Topo do Card: Nome, Tags e Preço */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -600,6 +638,19 @@ export function DigitalMenuView({
                   inCart && "bg-primary/[0.02]",
                 )}
               >
+                {/* Miniatura na lista compacta */}
+                {item.image && (
+                  <div className="size-14 sm:size-16 rounded-xl overflow-hidden bg-muted/40 shrink-0 border border-border">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-xs sm:text-sm text-foreground truncate">
@@ -773,9 +824,19 @@ export function DigitalMenuView({
             <div className="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-border/60">
               {cartItemsArray.map(({ item, qty, note }) => (
                 <div key={item.id} className="pt-3 first:pt-0 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h5 className="font-semibold text-sm text-foreground">{item.name}</h5>
+                  <div className="flex items-start justify-between gap-2.5">
+                    {item.image && (
+                      <div className="size-11 rounded-lg overflow-hidden shrink-0 border border-border bg-muted/30">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-sm text-foreground truncate">{item.name}</h5>
                       <span className="font-mono text-xs text-muted-foreground">
                         {brl(item.price)} cada
                       </span>
@@ -863,7 +924,26 @@ export function DigitalMenuView({
       {/* 📝 MODAL DE PERSONALIZAÇÃO E DETALHES DO ITEM */}
       {itemToCustomize && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-5 duration-200 overflow-hidden">
+            {/* Foto Grande do Prato no Modal */}
+            {itemToCustomize.image && (
+              <div className="relative -mx-5 -mt-5 h-44 sm:h-52 overflow-hidden bg-muted/40 border-b border-border">
+                <img
+                  src={itemToCustomize.image}
+                  alt={itemToCustomize.name}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <button
+                  type="button"
+                  onClick={() => setItemToCustomize(null)}
+                  className="absolute top-3 right-3 size-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-sm font-bold backdrop-blur-xs transition-colors shadow-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* Topo */}
             <div className="flex items-start justify-between">
               <div>
@@ -877,13 +957,15 @@ export function DigitalMenuView({
                   <p className="text-xs text-muted-foreground">{itemToCustomize.serves}</p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setItemToCustomize(null)}
-                className="size-8 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-foreground text-sm font-bold"
-              >
-                ✕
-              </button>
+              {!itemToCustomize.image && (
+                <button
+                  type="button"
+                  onClick={() => setItemToCustomize(null)}
+                  className="size-8 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-foreground text-sm font-bold"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             {/* Descrição e Preço */}

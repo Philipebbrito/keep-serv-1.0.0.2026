@@ -1,37 +1,27 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import {
-  ChefHat,
-  ClipboardList,
-  LineChart,
-  Lock,
-  Mail,
-  QrCode,
-  UtensilsCrossed,
-  Wallet,
-} from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertCircle, ChefHat, Eye, EyeOff, Lock, Store, User } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DEMO_ACCOUNTS } from "@/lib/keepserv/mock-data";
 import { useKeepServ } from "@/lib/keepserv/store";
-import type { Role } from "@/lib/keepserv/types";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Keep Serv — Gestão de pedidos para bares e restaurantes" },
+      { title: "Keep Serv — Gestão Multi-Tenant para Bares e Restaurantes" },
       {
         name: "description",
         content:
-          "Keep Serv conecta garçons, cozinha e gestores em tempo real: quadro de pedidos kanban, mensagens rápidas e indicadores do salão.",
+          "Keep Serv conecta garçons, cozinha e gestores em tempo real com separação por lojas (Tenants) e controle de acesso RBAC.",
       },
-      { property: "og:title", content: "Keep Serv — Gestão de pedidos em tempo real" },
+      { property: "og:title", content: "Keep Serv — Gestão Multi-Tenant em tempo real" },
       {
         property: "og:description",
         content:
-          "Entre como garçom, cozinha ou gestor e acompanhe cada pedido do salão à praça quente.",
+          "Acesse como Dev, Gestor ou Colaborador e acompanhe pedidos, equipe e cardápio de forma isolada.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -40,192 +30,216 @@ export const Route = createFileRoute("/")({
   component: LoginPage,
 });
 
-const ROLES: { id: Role; label: string; desc: string; icon: typeof ChefHat }[] = [
-  {
-    id: "garcom",
-    label: "Garçom",
-    desc: "Abre pedidos, acompanha o preparo e retira quando fica pronto.",
-    icon: ClipboardList,
-  },
-  {
-    id: "cozinha",
-    label: "Cozinha",
-    desc: "Recebe a fila, atualiza o preparo e avisa o salão.",
-    icon: UtensilsCrossed,
-  },
-  {
-    id: "gestor",
-    label: "Gestor",
-    desc: "Vê o salão inteiro, atrasos, tempo médio e indicadores.",
-    icon: LineChart,
-  },
-  {
-    id: "caixa",
-    label: "Caixa",
-    desc: "Fecha comandas, registra pagamentos e divide a conta.",
-    icon: Wallet,
-  },
-];
-
 function LoginPage() {
-  const { login } = useKeepServ();
+  const { loginWithCredentials } = useKeepServ();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>("garcom");
-  const [email, setEmail] = useState(DEMO_ACCOUNTS["garcom"]!.email);
-  const [password, setPassword] = useState("keepserv");
 
-  const pickRole = (r: Role) => {
-    setRole(r);
-    setEmail(DEMO_ACCOUNTS[r]!.email);
-  };
+  const [codigoLoja, setCodigoLoja] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, role);
-    navigate({
-      to: role === "gestor" ? "/dashboard" : role === "caixa" ? "/caixa" : "/pedidos",
-    });
+    setErrorMessage(null);
+
+    const res = loginWithCredentials(usuario, password, codigoLoja);
+
+    if (!res.success) {
+      setErrorMessage(res.message || "Erro de autenticação. Verifique os dados digitados.");
+      toast.error(res.message || "Acesso não autorizado.");
+      return;
+    }
+
+    toast.success(`Bem-vindo, ${res.name}! Acesso liberado.`);
+
+    // Redireciona conforme o nível e papel
+    if (res.nivel === "dev") {
+      navigate({ to: "/dev/lojas" });
+    } else if (res.role === "gestor") {
+      navigate({ to: "/dashboard" });
+    } else if (res.role === "caixa") {
+      navigate({ to: "/caixa" });
+    } else {
+      navigate({ to: "/pedidos" });
+    }
   };
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
+      {/* Banner Lateral Esquerdo */}
       <aside className="bg-brand-gradient relative hidden flex-col justify-between p-12 lg:flex">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/15 backdrop-blur">
             <ChefHat className="size-6 text-primary-foreground" />
           </span>
-          <span className="font-display text-2xl font-semibold text-primary-foreground">
-            Keep<span className="text-accent">Serv</span>
-          </span>
+          <div>
+            <span className="font-display text-2xl font-semibold text-primary-foreground">
+              Keep<span className="text-accent">Serv</span>
+            </span>
+            <span className="ml-2.5 rounded-md bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+              Multi-Tenant
+            </span>
+          </div>
         </div>
 
         <div className="max-w-lg">
           <h1 className="font-display text-5xl leading-[1.05] font-semibold text-primary-foreground">
-            O salão e a cozinha falando a mesma língua.
+            Arquitetura Multi-Tenant com controle de acesso por níveis.
           </h1>
           <p className="mt-5 text-lg text-primary-foreground/80">
-            Quadro de pedidos em tempo real, alertas de atraso por cor e mensagens rápidas entre
-            garçom e praça — tudo em uma tela só.
+            Separação segura de dados por loja com isolamento de pedidos, cardápio, estoque e equipe
+            de colaboradores.
           </p>
-          <ul className="mt-8 space-y-3 text-sm text-primary-foreground/85">
-            {[
-              "Kanban Pendente → Preparo → Pronto → Entregue",
-              "Cards que mudam de cor conforme o tempo de espera",
-              "Mensagens rápidas pré-definidas por pedido",
-              "Dashboard de mesas, atrasos e produtos mais vendidos",
-            ].map((f) => (
-              <li key={f} className="flex items-center gap-3">
-                <span className="size-1.5 rounded-full bg-accent" />
-                {f}
-              </li>
-            ))}
-          </ul>
+
+          <div className="mt-8 space-y-4">
+            <div className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur">
+              <p className="text-xs font-bold uppercase tracking-wider text-accent">
+                Níveis de Acesso (RBAC)
+              </p>
+              <ul className="mt-2 space-y-2 text-sm text-primary-foreground/90">
+                <li className="flex items-start gap-2">
+                  <span className="font-mono text-xs font-bold text-accent">dev:</span>
+                  <span>Super Admin exclusivo para cadastro e gestão de lojas cadastradas.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono text-xs font-bold text-accent">gestor:</span>
+                  <span>Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-mono text-xs font-bold text-accent">colaborador:</span>
+                  <span>
+                    Acesso restrito apenas às operações rotineiras do salão, cozinha ou caixa.
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        <p className="text-xs text-primary-foreground/60">
-          Projeto Integrador · dados de demonstração
-        </p>
+        <div className="flex items-center justify-between text-xs text-primary-foreground/60">
+          <p>Projeto Integrador · RBAC & Multi-Tenant</p>
+          <span className="font-mono">Versão 2.5</span>
+        </div>
       </aside>
 
-      <div className="flex items-center justify-center bg-background px-5 py-12">
+      {/* Formulário de Login */}
+      <div className="flex items-center justify-center bg-background px-5 py-10">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="bg-brand-gradient flex size-10 items-center justify-center rounded-xl">
-              <ChefHat className="size-5 text-primary-foreground" />
-            </span>
-            <span className="font-display text-xl font-semibold">
-              Keep<span className="text-accent">Serv</span>
-            </span>
+          {/* Cabeçalho Mobile */}
+          <div className="mb-6 flex items-center justify-between lg:hidden">
+            <div className="flex items-center gap-2.5">
+              <span className="bg-brand-gradient flex size-10 items-center justify-center rounded-xl">
+                <ChefHat className="size-5 text-primary-foreground" />
+              </span>
+              <span className="font-display text-xl font-semibold">
+                Keep<span className="text-accent">Serv</span>
+              </span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              Multi-Tenant
+            </Badge>
           </div>
 
-          <h2 className="font-display text-3xl font-semibold">Entrar no turno</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Escolha seu perfil de acesso — cada um vê uma interface diferente.
-          </p>
-
-          <div className="mt-6 grid gap-2">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => pickRole(r.id)}
-                className={cn(
-                  "flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all",
-                  role === r.id
-                    ? "border-primary bg-primary/5 shadow-[var(--shadow-card)]"
-                    : "border-border bg-card hover:border-primary/40",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-lg",
-                    role === r.id ? "bg-primary text-primary-foreground" : "bg-secondary",
-                  )}
-                >
-                  <r.icon className="size-4.5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">{r.label}</span>
-                  <span className="block text-xs text-muted-foreground">{r.desc}</span>
-                </span>
-              </button>
-            ))}
+          <div>
+            <h2 className="font-display text-3xl font-semibold tracking-tight">
+              Entrar no sistema
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Informe seu nome de usuário, senha e código da loja para acessar.
+            </p>
           </div>
 
-          <form onSubmit={submit} className="mt-6 space-y-4">
+          {/* Mensagem de Erro */}
+          {errorMessage && (
+            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                <span className="font-semibold">Falha no Acesso:</span> {errorMessage}
+              </div>
+            </div>
+          )}
+
+          {/* Formulário */}
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {/* Campo: Código da Loja */}
             <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="codigoLoja" className="text-xs font-semibold">
+                  Código da Loja
+                </Label>
+                <span className="text-[11px] text-muted-foreground">
+                  (Obrigatório para Gestor/Colaborador · Vazio para Dev)
+                </span>
+              </div>
               <div className="relative">
-                <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Store className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9"
+                  id="codigoLoja"
+                  type="text"
+                  placeholder="Ex: KEEPSERV01"
+                  value={codigoLoja}
+                  onChange={(e) => setCodigoLoja(e.target.value.toUpperCase())}
+                  className="pl-9 font-mono uppercase"
+                  autoComplete="off"
                 />
               </div>
             </div>
+
+            {/* Campo: Nome de Usuário */}
             <div className="space-y-1.5">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="usuario" className="text-xs font-semibold">
+                Nome de Usuário
+              </Label>
+              <div className="relative">
+                <User className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="usuario"
+                  type="text"
+                  required
+                  placeholder="Ex: gestor, dev, garcom"
+                  value={usuario}
+                  onChange={(e) => setUsuario(e.target.value)}
+                  className="pl-9"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                />
+              </div>
+            </div>
+
+            {/* Campo: Senha */}
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-semibold">
+                Senha
+              </Label>
               <div className="relative">
                 <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 pr-9"
+                  autoComplete="current-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
             </div>
-            <Button type="submit" size="lg" className="w-full">
-              Entrar como {ROLES.find((r) => r.id === role)?.label}
+
+            <Button type="submit" size="lg" className="w-full font-semibold shadow-xs">
+              Entrar no Sistema
             </Button>
           </form>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
-              <span className="bg-card px-2 text-muted-foreground">ou autoatendimento</span>
-            </div>
-          </div>
-
-          <Link
-            to="/cliente"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-xs font-semibold text-foreground transition-all hover:bg-muted hover:border-primary/40 shadow-xs"
-          >
-            <QrCode className="size-4 text-primary" />
-            <span>Acessar como Cliente (Cardápio / Comanda)</span>
-          </Link>
-
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Ambiente de demonstração: qualquer senha funciona.
-          </p>
         </div>
       </div>
     </div>

@@ -2,12 +2,14 @@ import {
   AlertTriangle,
   Beef,
   Boxes,
+  Camera,
   CheckCircle2,
   DollarSign,
   Edit,
   Eye,
   EyeOff,
   Flame,
+  Image as ImageIcon,
   Plus,
   RotateCcw,
   Search,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ProductPhotoUploader } from "@/components/keepserv/product-photo-uploader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +81,7 @@ export function MenuManagement() {
   const [formCategory, setFormCategory] = useState<MenuCategory>("pratos");
   const [formPrice, setFormPrice] = useState("0,00");
   const [formDescription, setFormDescription] = useState("");
+  const [formImage, setFormImage] = useState<string | undefined>(undefined);
   const [formServes, setFormServes] = useState("");
   const [formHighlight, setFormHighlight] = useState(false);
   const [formActive, setFormActive] = useState(true);
@@ -128,6 +132,7 @@ export function MenuManagement() {
     setFormCategory("pratos");
     setFormPrice("0,00");
     setFormDescription("");
+    setFormImage(undefined);
     setFormServes("1 pessoa");
     setFormHighlight(false);
     setFormActive(true);
@@ -148,6 +153,7 @@ export function MenuManagement() {
     setFormCategory(item.category);
     setFormPrice(item.price.toFixed(2).replace(".", ","));
     setFormDescription(item.description || "");
+    setFormImage(item.image);
     setFormServes(item.serves || "");
     setFormHighlight(!!item.highlight);
     setFormActive(item.active !== false);
@@ -242,6 +248,7 @@ export function MenuManagement() {
       category: formCategory,
       price: cleanPrice,
       description: formDescription.trim() || undefined,
+      image: formImage?.trim() || undefined,
       serves: formServes.trim() || undefined,
       highlight: formHighlight,
       active: formActive,
@@ -428,9 +435,46 @@ export function MenuManagement() {
               >
                 {/* Destaque Banner */}
                 {prod.highlight && (
-                  <div className="absolute top-0 right-0 bg-amber-500 text-amber-950 font-bold text-[9px] px-2 py-0.5 rounded-bl-lg flex items-center gap-1 uppercase tracking-wider">
+                  <div className="absolute top-0 right-0 z-10 bg-amber-500 text-amber-950 font-bold text-[9px] px-2 py-0.5 rounded-bl-lg flex items-center gap-1 uppercase tracking-wider shadow-xs">
                     <Sparkles className="size-2.5" /> Destaque
                   </div>
+                )}
+
+                {/* Foto do Prato no Card do Gestor */}
+                {prod.image ? (
+                  <div className="relative mb-3 -mx-4 -mt-4 h-36 overflow-hidden bg-muted/40 border-b group/img">
+                    <img
+                      src={prod.image}
+                      alt={prod.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(prod)}
+                      className="absolute bottom-2 right-2 rounded-md bg-black/60 hover:bg-black/85 text-white text-[10px] font-medium px-2 py-1 flex items-center gap-1 backdrop-blur-xs transition-colors shadow-xs"
+                      title="Alterar foto"
+                    >
+                      <Camera className="size-3 text-white" />
+                      Alterar foto
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(prod)}
+                    className="mb-3 -mx-4 -mt-4 py-2.5 px-3 bg-muted/20 hover:bg-primary/5 border-b border-dashed flex items-center justify-between text-muted-foreground hover:text-primary cursor-pointer transition-colors text-left"
+                    title="Adicionar foto ao produto"
+                  >
+                    <span className="text-[11px] flex items-center gap-1.5 font-medium">
+                      <Camera className="size-3.5 text-muted-foreground" />
+                      Sem foto cadastrada
+                    </span>
+                    <span className="text-[10px] font-semibold text-primary">
+                      + Adicionar foto
+                    </span>
+                  </button>
                 )}
 
                 <div>
@@ -606,6 +650,14 @@ export function MenuManagement() {
                 {formError}
               </div>
             )}
+
+            {/* FOTO DO PRODUTO */}
+            <ProductPhotoUploader
+              value={formImage}
+              onChange={setFormImage}
+              productName={formName}
+              category={formCategory}
+            />
 
             {/* DADOS BÁSICOS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

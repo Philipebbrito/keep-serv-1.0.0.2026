@@ -1,5 +1,37 @@
 export type Role = "garcom" | "cozinha" | "gestor" | "caixa";
 
+// --- MULTI-TENANT & RBAC ---
+export type NivelAcesso = "dev" | "dono_loja" | "gestor" | "colaborador";
+
+export const NIVEL_LABEL: Record<NivelAcesso, string> = {
+  dev: "Desenvolvedor (Super Admin)",
+  dono_loja: "Gestor",
+  gestor: "Gestor",
+  colaborador: "Colaborador da Loja",
+};
+
+export const NIVEL_DESCRIPTION: Record<NivelAcesso, string> = {
+  dev: "Acesso total e exclusivo ao cadastro e gestão de lojas cadastradas.",
+  dono_loja: "Acesso total aos dados da sua própria loja e gestão exclusiva da sua equipe.",
+  gestor: "Acesso total aos dados da sua própria loja e gestão exclusiva da sua equipe.",
+  colaborador:
+    "Acesso restrito apenas às operações rotineiras da loja (pedidos, cozinha ou caixa).",
+};
+
+export type StatusLoja = "ativo" | "inativo";
+
+export interface Loja {
+  id: string;
+  nome_fantasia: string;
+  codigo_loja: string; // único no sistema
+  status: StatusLoja; // 'ativo' | 'inativo'
+  created_at?: number;
+  gestor_id?: string;
+  dono_id?: string; // retrocompatibilidade
+  cidade?: string;
+  telefone?: string;
+}
+
 export type OrderStatus = "pendente" | "preparo" | "pronto" | "entregue" | "pago";
 
 export type PaymentMethod = "dinheiro" | "debito" | "credito" | "pix";
@@ -42,6 +74,7 @@ export interface OrderMessage {
 
 export interface Order {
   id: string;
+  loja_id: string; // Isolamento multi-tenant
   code: string;
   table: number;
   guests: number;
@@ -90,11 +123,18 @@ export const ROLE_DESCRIPTION: Record<Role, string> = {
 
 export interface UserAccount {
   id: string;
-  name: string;
+  loja_id: string | null; // Chave estrangeira para lojas.id (NULL para desenvolvedor 'dev')
+  usuario: string; // Nome de usuário para login
+  username: string; // alias para compatibilidade
+  nome: string;
+  name: string; // alias para retrocompatibilidade
   email: string;
+  senha: string;
+  password: string; // alias para retrocompatibilidade
+  nivel: NivelAcesso; // 'dev' | 'gestor' | 'dono_loja' | 'colaborador'
+  cargo?: Role; // Função operacional para colaboradores (garçom, cozinha, etc.)
+  role: Role; // alias para compatibilidade com o sistema de pedidos
   phone: string;
-  role: Role;
-  password: string;
   active: boolean;
   createdAt: number;
   lastPasswordChangeAt?: number;
@@ -155,6 +195,7 @@ export const CASH_FLOW_CATEGORY_LABEL: Record<CashFlowCategory, string> = {
 
 export interface CashFlowEntry {
   id: string;
+  loja_id: string; // Isolamento multi-tenant
   type: CashFlowType;
   category: CashFlowCategory;
   description: string;

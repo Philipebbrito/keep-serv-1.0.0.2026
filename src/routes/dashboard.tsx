@@ -306,22 +306,24 @@ function DashboardPage() {
             <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setGestorTab("equipe")}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
-              gestorTab === "equipe"
-                ? "bg-card text-foreground shadow-sm border border-border/80"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Users className="size-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Equipe & Usuários</span>
-            <Badge variant="secondary" className="ml-1 text-[9px] py-0 px-1.5 font-normal">
-              {users.length} membros
-            </Badge>
-          </button>
+          {(session?.nivel === "dono_loja" || session?.nivel === "dev") && (
+            <button
+              type="button"
+              onClick={() => setGestorTab("equipe")}
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all",
+                gestorTab === "equipe"
+                  ? "bg-card text-foreground shadow-sm border border-border/80"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Users className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Minha Equipe</span>
+              <Badge variant="secondary" className="ml-1 text-[9px] py-0 px-1.5 font-normal">
+                {users.length} membros
+              </Badge>
+            </button>
+          )}
         </div>
 
         <span className="text-xs text-muted-foreground hidden md:inline">

@@ -1,4 +1,4 @@
-import type { CashFlowEntry, Order, OrderItem, UserAccount } from "./types";
+import type { CashFlowEntry, Loja, Order, OrderItem, UserAccount } from "./types";
 
 const MIN = 60_000;
 
@@ -15,7 +15,7 @@ function item(
   return { id: uid("it"), name, qty, price, category, note };
 }
 
-/** Pedidos fake realistas, com tempos relativos ao momento de carregamento. */
+/** Pedidos fake realistas com isolamento por loja_id */
 export function buildSeedOrders(now: number): Order[] {
   const mk = (
     code: string,
@@ -28,8 +28,10 @@ export function buildSeedOrders(now: number): Order[] {
     items: OrderItem[],
     notes?: string,
     priority = false,
+    loja_id = "loja-1",
   ): Order => ({
     id: uid("ord"),
+    loja_id,
     code,
     table,
     guests,
@@ -251,69 +253,251 @@ export const AVG_TIME_BY_STATION = [
 
 export const TABLES_TOTAL = 24;
 
+export const INITIAL_LOJAS: Loja[] = [
+  {
+    id: "loja-1",
+    nome_fantasia: "Bar & Restaurante Keep Serv (Matriz)",
+    codigo_loja: "KEEPSERV01",
+    status: "ativo",
+    created_at: Date.now() - 60 * 86400000,
+    dono_id: "usr-gestor-1",
+    cidade: "São Paulo / SP",
+    telefone: "(11) 3456-7890",
+  },
+  {
+    id: "loja-2",
+    nome_fantasia: "Pizzaria Bela Vista",
+    codigo_loja: "PIZZA02",
+    status: "ativo",
+    created_at: Date.now() - 20 * 86400000,
+    dono_id: "usr-dono-pizza",
+    cidade: "Campinas / SP",
+    telefone: "(19) 3876-5432",
+  },
+  {
+    id: "loja-3",
+    nome_fantasia: "Bistrô & Café Colonial (Exemplo Inativo)",
+    codigo_loja: "INATIVO99",
+    status: "inativo",
+    created_at: Date.now() - 10 * 86400000,
+    dono_id: "usr-dono-inativo",
+    cidade: "Santos / SP",
+    telefone: "(13) 3211-9988",
+  },
+];
+
 export const INITIAL_USERS: UserAccount[] = [
+  // 1. DESENVOLVEDOR DO SISTEMA (Super Admin - Acesso exclusivo ao cadastro de lojas cadastradas)
+  {
+    id: "usr-dev-1",
+    loja_id: null, // NULL para 'dev' conforme especificação
+    usuario: "dev",
+    username: "dev",
+    nome: "Desenvolvedor Root",
+    name: "Desenvolvedor Root",
+    email: "dev@keepserv.app",
+    senha: "dev123",
+    password: "dev123",
+    nivel: "dev",
+    cargo: "gestor",
+    role: "gestor",
+    phone: "(11) 99999-0000",
+    active: true,
+    createdAt: Date.now() - 90 * 86400000,
+    avatarColor: "bg-purple-600",
+  },
+  // 2. GESTOR DA LOJA 1 (Cliente pagante da Loja Matriz)
   {
     id: "usr-gestor-1",
-    name: "Marcos Tavares",
+    loja_id: "loja-1",
+    usuario: "gestor",
+    username: "gestor",
+    nome: "Marcos Tavares (Gestor)",
+    name: "Marcos Tavares (Gestor)",
     email: "gestor@keepserv.app",
-    phone: "(11) 98123-4567",
-    role: "gestor",
+    senha: "keepserv",
     password: "keepserv",
+    nivel: "gestor",
+    cargo: "gestor",
+    role: "gestor",
+    phone: "(11) 98123-4567",
     active: true,
     createdAt: Date.now() - 60 * 86400000,
     avatarColor: "bg-indigo-600",
   },
+  // 3. COLABORADORES DA LOJA 1
   {
     id: "usr-garcom-1",
+    loja_id: "loja-1",
+    usuario: "garcom",
+    username: "garcom",
+    nome: "Ana Paula",
     name: "Ana Paula",
     email: "garcom@keepserv.app",
-    phone: "(11) 99456-7890",
-    role: "garcom",
+    senha: "keepserv",
     password: "keepserv",
+    nivel: "colaborador",
+    cargo: "garcom",
+    role: "garcom",
+    phone: "(11) 99456-7890",
     active: true,
     createdAt: Date.now() - 45 * 86400000,
     avatarColor: "bg-emerald-600",
   },
   {
     id: "usr-garcom-2",
+    loja_id: "loja-1",
+    usuario: "rafael",
+    username: "rafael",
+    nome: "Rafael Lima",
     name: "Rafael Lima",
     email: "rafael@keepserv.app",
-    phone: "(11) 97321-6549",
-    role: "garcom",
+    senha: "keepserv",
     password: "keepserv",
+    nivel: "colaborador",
+    cargo: "garcom",
+    role: "garcom",
+    phone: "(11) 97321-6549",
     active: true,
     createdAt: Date.now() - 30 * 86400000,
     avatarColor: "bg-teal-600",
   },
   {
     id: "usr-cozinha-1",
+    loja_id: "loja-1",
+    usuario: "cozinha",
+    username: "cozinha",
+    nome: "Chef Carlos (Praça Quente)",
     name: "Chef Carlos (Praça Quente)",
     email: "cozinha@keepserv.app",
-    phone: "(11) 98765-4321",
-    role: "cozinha",
+    senha: "keepserv",
     password: "keepserv",
+    nivel: "colaborador",
+    cargo: "cozinha",
+    role: "cozinha",
+    phone: "(11) 98765-4321",
     active: true,
     createdAt: Date.now() - 40 * 86400000,
     avatarColor: "bg-amber-600",
   },
   {
     id: "usr-caixa-1",
+    loja_id: "loja-1",
+    usuario: "caixa",
+    username: "caixa",
+    nome: "Juliana Reis",
     name: "Juliana Reis",
     email: "caixa@keepserv.app",
-    phone: "(11) 99888-7766",
-    role: "caixa",
+    senha: "keepserv",
     password: "keepserv",
+    nivel: "colaborador",
+    cargo: "caixa",
+    role: "caixa",
+    phone: "(11) 99888-7766",
     active: true,
     createdAt: Date.now() - 35 * 86400000,
     avatarColor: "bg-blue-600",
   },
+  // 4. GESTOR DA LOJA 2 (Pizzaria Bela Vista - Demonstração Multi-Tenant)
+  {
+    id: "usr-dono-pizza",
+    loja_id: "loja-2",
+    usuario: "bruno",
+    username: "bruno",
+    nome: "Bruno Pizzaiolo (Gestor)",
+    name: "Bruno Pizzaiolo (Gestor)",
+    email: "bruno@pizzariabelavista.com",
+    senha: "pizza123",
+    password: "pizza123",
+    nivel: "gestor",
+    cargo: "gestor",
+    role: "gestor",
+    phone: "(19) 99123-8877",
+    active: true,
+    createdAt: Date.now() - 20 * 86400000,
+    avatarColor: "bg-rose-600",
+  },
+  // 5. COLABORADOR DA LOJA 2
+  {
+    id: "usr-colab-pizza-1",
+    loja_id: "loja-2",
+    usuario: "lucas",
+    username: "lucas",
+    nome: "Lucas Forneiro",
+    name: "Lucas Forneiro",
+    email: "lucas@pizzariabelavista.com",
+    senha: "pizza123",
+    password: "pizza123",
+    nivel: "colaborador",
+    cargo: "cozinha",
+    role: "cozinha",
+    phone: "(19) 98765-1122",
+    active: true,
+    createdAt: Date.now() - 15 * 86400000,
+    avatarColor: "bg-orange-600",
+  },
+  // 6. GESTOR DA LOJA 3 (Inativa para teste de segurança no login)
+  {
+    id: "usr-dono-inativo",
+    loja_id: "loja-3",
+    usuario: "claudio",
+    username: "claudio",
+    nome: "Claudio Santos (Gestor Bistrô)",
+    name: "Claudio Santos (Gestor Bistrô)",
+    email: "claudio@bistroinativo.com",
+    senha: "123456",
+    password: "123456",
+    nivel: "gestor",
+    cargo: "gestor",
+    role: "gestor",
+    phone: "(13) 98111-2233",
+    active: true,
+    createdAt: Date.now() - 10 * 86400000,
+    avatarColor: "bg-stone-600",
+  },
 ];
 
-export const DEMO_ACCOUNTS: Record<string, { email: string; name: string }> = {
-  garcom: { email: "garcom@keepserv.app", name: "Ana Paula" },
-  cozinha: { email: "cozinha@keepserv.app", name: "Praça quente" },
-  gestor: { email: "gestor@keepserv.app", name: "Marcos Tavares" },
-  caixa: { email: "caixa@keepserv.app", name: "Juliana Reis" },
+export const DEMO_ACCOUNTS: Record<
+  string,
+  { usuario: string; email: string; name: string; codigo_loja: string }
+> = {
+  dev: { usuario: "dev", email: "dev@keepserv.app", name: "Desenvolvedor Root", codigo_loja: "" },
+  gestor: {
+    usuario: "gestor",
+    email: "gestor@keepserv.app",
+    name: "Marcos Tavares (Gestor)",
+    codigo_loja: "KEEPSERV01",
+  },
+  garcom: {
+    usuario: "garcom",
+    email: "garcom@keepserv.app",
+    name: "Ana Paula",
+    codigo_loja: "KEEPSERV01",
+  },
+  cozinha: {
+    usuario: "cozinha",
+    email: "cozinha@keepserv.app",
+    name: "Chef Carlos",
+    codigo_loja: "KEEPSERV01",
+  },
+  caixa: {
+    usuario: "caixa",
+    email: "caixa@keepserv.app",
+    name: "Juliana Reis",
+    codigo_loja: "KEEPSERV01",
+  },
+  dono_pizza: {
+    usuario: "bruno",
+    email: "bruno@pizzariabelavista.com",
+    name: "Bruno Pizzaiolo (Gestor)",
+    codigo_loja: "PIZZA02",
+  },
+  loja_inativa: {
+    usuario: "claudio",
+    email: "claudio@bistroinativo.com",
+    name: "Claudio Santos",
+    codigo_loja: "INATIVO99",
+  },
 };
 
 export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[] {
@@ -323,6 +507,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
   const entries: CashFlowEntry[] = [
     {
       id: cfId(),
+      loja_id: "loja-1",
       type: "entrada",
       category: "suprimento",
       description: "Fundo de Troco Inicial (Abertura de Caixa)",
@@ -334,6 +519,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
     },
     {
       id: cfId(),
+      loja_id: "loja-1",
       type: "saida",
       category: "insumos",
       description: "Compra emergencial de gelo e hortifruti fresco",
@@ -345,6 +531,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
     },
     {
       id: cfId(),
+      loja_id: "loja-1",
       type: "saida",
       category: "sangria",
       description: "Sangria de segurança para o cofre administrativo",
@@ -356,6 +543,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
     },
     {
       id: cfId(),
+      loja_id: "loja-1",
       type: "saida",
       category: "pessoal_extra",
       description: "Adiantamento / Diária de garçom extra (Turno almoço)",
@@ -367,6 +555,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
     },
     {
       id: cfId(),
+      loja_id: "loja-1",
       type: "saida",
       category: "manutencao",
       description: "Reparo emergencial iluminação da bancada do bar",
@@ -384,6 +573,7 @@ export function buildSeedCashFlow(now: number, orders: Order[]): CashFlowEntry[]
     if (order.payment) {
       entries.push({
         id: cfId(),
+        loja_id: order.loja_id || "loja-1",
         type: "entrada",
         category: "venda_comanda",
         description: `Recebimento da Comanda ${order.code} · Mesa ${order.table}`,

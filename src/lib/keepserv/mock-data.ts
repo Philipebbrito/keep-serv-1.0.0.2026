@@ -486,6 +486,12 @@ export const DEMO_ACCOUNTS: Record<
     name: "Juliana Reis",
     codigo_loja: "KEEPSERV01",
   },
+  gestor_pizza: {
+    usuario: "bruno",
+    email: "bruno@pizzariabelavista.com",
+    name: "Bruno Pizzaiolo (Gestor)",
+    codigo_loja: "PIZZA02",
+  },
   dono_pizza: {
     usuario: "bruno",
     email: "bruno@pizzariabelavista.com",

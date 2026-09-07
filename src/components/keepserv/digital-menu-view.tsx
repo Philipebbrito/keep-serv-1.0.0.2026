@@ -836,7 +836,9 @@ export function DigitalMenuView({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-sm text-foreground truncate">{item.name}</h5>
+                      <h5 className="font-semibold text-sm text-foreground truncate">
+                        {item.name}
+                      </h5>
                       <span className="font-mono text-xs text-muted-foreground">
                         {brl(item.price)} cada
                       </span>

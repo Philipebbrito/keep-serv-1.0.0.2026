@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  AtSign,
   Check,
   CheckCircle2,
   ChefHat,
@@ -105,6 +106,8 @@ export function TeamManagement() {
 
   // Form states para Adicionar Usuário
   const [newName, setNewName] = useState("");
+  const [newUsuario, setNewUsuario] = useState("");
+  const [userTouchedUsuario, setUserTouchedUsuario] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newRole, setNewRole] = useState<Role>("garcom");
@@ -118,6 +121,7 @@ export function TeamManagement() {
 
   // Form states para Editar Dados
   const [editName, setEditName] = useState("");
+  const [editUsuario, setEditUsuario] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState<Role>("garcom");
@@ -141,6 +145,8 @@ export function TeamManagement() {
       const matchSearch =
         !q ||
         u.name.toLowerCase().includes(q) ||
+        (u.usuario && u.usuario.toLowerCase().includes(q)) ||
+        (u.username && u.username.toLowerCase().includes(q)) ||
         u.email.toLowerCase().includes(q) ||
         u.phone.toLowerCase().includes(q) ||
         ROLE_LABEL[u.role].toLowerCase().includes(q);
@@ -151,6 +157,8 @@ export function TeamManagement() {
   // Abrir Modal de Adicionar Usuário
   const handleOpenAdd = () => {
     setNewName("");
+    setNewUsuario("");
+    setUserTouchedUsuario(false);
     setNewEmail("");
     setNewPhone("");
     setNewRole("garcom");
@@ -166,8 +174,17 @@ export function TeamManagement() {
       toast.error("Informe o nome do colaborador.");
       return;
     }
-    if (!newEmail.trim() || !newEmail.includes("@")) {
-      toast.error("Informe um e-mail válido.");
+    const cleanUser = (
+      newUsuario.trim() ||
+      newName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, ".")
+    ).toLowerCase();
+
+    if (!cleanUser) {
+      toast.error("Informe um nome de usuário para login.");
       return;
     }
     if (!newPhone.trim()) {
@@ -179,23 +196,29 @@ export function TeamManagement() {
       return;
     }
 
-    // Verificar e-mail duplicado
-    const exists = users.some((u) => u.email.toLowerCase() === newEmail.trim().toLowerCase());
+    // Verificar nome de usuário duplicado
+    const exists = users.some(
+      (u) =>
+        (u.usuario && u.usuario.toLowerCase() === cleanUser) ||
+        (u.username && u.username.toLowerCase() === cleanUser),
+    );
     if (exists) {
-      toast.error("Já existe um colaborador cadastrado com este e-mail.");
+      toast.error(`O nome de usuário "${cleanUser}" já está cadastrado nesta equipe.`);
       return;
     }
 
     const created = addUser({
       name: newName,
-      email: newEmail,
+      usuario: cleanUser,
+      username: cleanUser,
+      email: newEmail.trim() || undefined,
       phone: newPhone,
       role: newRole,
       password: newPassword,
     });
 
     toast.success(
-      `Colaborador(a) ${created.name} cadastrado(a) com sucesso como ${ROLE_LABEL[created.role]}!`,
+      `Colaborador(a) ${created.name} cadastrado(a) com sucesso como ${ROLE_LABEL[created.role]} (usuário: @${created.usuario || created.username})!`,
     );
     setIsAddOpen(false);
   };
@@ -233,7 +256,8 @@ export function TeamManagement() {
   const handleOpenEdit = (u: UserAccount) => {
     setSelectedUser(u);
     setEditName(u.name);
-    setEditEmail(u.email);
+    setEditUsuario(u.usuario || u.username || "");
+    setEditEmail(u.email || "");
     setEditPhone(u.phone);
     setEditRole(u.role);
     setIsEditOpen(true);
@@ -247,8 +271,9 @@ export function TeamManagement() {
       toast.error("Informe o nome.");
       return;
     }
-    if (!editEmail.trim() || !editEmail.includes("@")) {
-      toast.error("Informe um e-mail válido.");
+    const cleanUser = editUsuario.trim().toLowerCase();
+    if (!cleanUser) {
+      toast.error("Informe o nome de usuário.");
       return;
     }
     if (!editPhone.trim()) {
@@ -256,18 +281,23 @@ export function TeamManagement() {
       return;
     }
 
-    // Checar duplicidade caso o email tenha mudado
+    // Checar duplicidade caso o usuario tenha mudado
     const exists = users.some(
-      (u) => u.id !== selectedUser.id && u.email.toLowerCase() === editEmail.trim().toLowerCase(),
+      (u) =>
+        u.id !== selectedUser.id &&
+        ((u.usuario && u.usuario.toLowerCase() === cleanUser) ||
+          (u.username && u.username.toLowerCase() === cleanUser)),
     );
     if (exists) {
-      toast.error("Este e-mail já pertence a outro colaborador.");
+      toast.error(`O nome de usuário "${cleanUser}" já pertence a outro colaborador.`);
       return;
     }
 
     updateUser(selectedUser.id, {
       name: editName,
-      email: editEmail,
+      usuario: cleanUser,
+      username: cleanUser,
+      email: editEmail.trim(),
       phone: editPhone,
       role: editRole,
     });
@@ -294,9 +324,11 @@ export function TeamManagement() {
       toast.error("Este usuário está inativo e não pode fazer login.");
       return;
     }
-    login(u.email, u.role);
+    login(u.usuario || u.username || u.email, u.role);
     toast.success(`Sessão alternada para ${u.name} (${ROLE_LABEL[u.role]})!`);
   };
+
+  const isDev = session?.nivel === "dev";
 
   return (
     <div className="space-y-6">
@@ -312,18 +344,27 @@ export function TeamManagement() {
             </h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground max-w-2xl">
-            Cadastre garçons, caixas, colaboradores da cozinha e gestores com nome, e-mail, telefone
-            e nível de acesso. Altere senhas a qualquer momento com efeito imediato.
+            Cadastre garçons, caixas, colaboradores da cozinha e gestores com nome, usuário de
+            login, telefone e nível de acesso. Altere senhas a qualquer momento com efeito imediato.
           </p>
         </div>
 
-        <Button
-          onClick={handleOpenAdd}
-          className="gap-2 shrink-0 bg-primary text-primary-foreground font-semibold rounded-xl h-10 px-4 shadow-xs hover:opacity-95"
-        >
-          <UserPlus className="size-4" />
-          <span>Novo Colaborador</span>
-        </Button>
+        {isDev ? (
+          <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3.5 py-2 text-xs text-purple-700 dark:text-purple-300">
+            <p className="font-semibold">Perfil Desenvolvedor (Dev)</p>
+            <p className="text-[11px] text-purple-600/80 dark:text-purple-300/80">
+              O desenvolvedor gerencia apenas lojas cadastradas e não cadastra colaboradores.
+            </p>
+          </div>
+        ) : (
+          <Button
+            onClick={handleOpenAdd}
+            className="gap-2 shrink-0 bg-primary text-primary-foreground font-semibold rounded-xl h-10 px-4 shadow-xs hover:opacity-95"
+          >
+            <UserPlus className="size-4" />
+            <span>Novo Colaborador</span>
+          </Button>
+        )}
       </div>
 
       {/* Cards de Métricas da Equipe */}
@@ -534,12 +575,19 @@ export function TeamManagement() {
                         )}
                       </div>
 
-                      {/* Contatos: E-mail e Telefone */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Mail className="size-3 text-muted-foreground/70" />
-                          <span className="font-mono text-[11px]">{u.email}</span>
+                      {/* Usuário de Login, Contatos e Cargo */}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                        <span className="inline-flex items-center gap-1 font-mono font-medium text-foreground bg-muted/60 border border-border/80 px-2 py-0.5 rounded-md text-[11px]">
+                          <AtSign className="size-3 text-primary" />
+                          <span>{u.usuario || u.username || u.email.split("@")[0]}</span>
                         </span>
+
+                        {u.email && (
+                          <span className="flex items-center gap-1">
+                            <Mail className="size-3 text-muted-foreground/70" />
+                            <span className="font-mono text-[11px]">{u.email}</span>
+                          </span>
+                        )}
 
                         <span className="flex items-center gap-1">
                           <Phone className="size-3 text-muted-foreground/70" />
@@ -664,26 +712,70 @@ export function TeamManagement() {
               <Input
                 id="add-name"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => {
+                  setNewName(e.target.value);
+                  if (!userTouchedUsuario) {
+                    const slug = e.target.value
+                      .toLowerCase()
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/[^a-z0-9]/g, ".");
+                    setNewUsuario(slug);
+                  }
+                }}
                 placeholder="Ex: Carlos Eduardo Silva"
                 className="h-9.5 rounded-xl text-xs sm:text-sm"
                 required
               />
             </div>
 
-            {/* E-mail de Acesso */}
+            {/* Nome de Usuário para Login */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="add-usuario" className="text-xs font-semibold">
+                  Nome de Usuário para Login <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-[10px] text-muted-foreground">
+                  Usado no login com a senha
+                </span>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-xs">
+                  @
+                </span>
+                <Input
+                  id="add-usuario"
+                  value={newUsuario}
+                  onChange={(e) => {
+                    setUserTouchedUsuario(true);
+                    setNewUsuario(
+                      e.target.value
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^a-z0-9._-]/g, ""),
+                    );
+                  }}
+                  placeholder="carlos.silva"
+                  className="h-9.5 pl-7 rounded-xl text-xs sm:text-sm font-mono"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* E-mail de Contato (Opcional) */}
             <div className="space-y-1.5">
               <Label htmlFor="add-email" className="text-xs font-semibold">
-                E-mail para Login <span className="text-destructive">*</span>
+                E-mail{" "}
+                <span className="text-muted-foreground text-[10px] font-normal">(Opcional)</span>
               </Label>
               <Input
                 id="add-email"
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="Ex: carlos@keepserv.app"
+                placeholder="Ex: carlos@email.com"
                 className="h-9.5 rounded-xl text-xs sm:text-sm font-mono"
-                required
               />
             </div>
 
@@ -873,7 +965,11 @@ export function TeamManagement() {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-foreground truncate">{selectedUser.name}</p>
                   <p className="text-[11px] text-muted-foreground font-mono truncate">
-                    {selectedUser.email}
+                    @
+                    {selectedUser.usuario ||
+                      selectedUser.username ||
+                      selectedUser.email.split("@")[0]}
+                    {selectedUser.email && ` · ${selectedUser.email}`}
                   </p>
                 </div>
                 <Badge
@@ -1006,9 +1102,38 @@ export function TeamManagement() {
                 />
               </div>
 
+              {/* Nome de Usuário para Login */}
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-usuario" className="text-xs font-semibold">
+                  Nome de Usuário para Login <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-xs">
+                    @
+                  </span>
+                  <Input
+                    id="edit-usuario"
+                    value={editUsuario}
+                    onChange={(e) =>
+                      setEditUsuario(
+                        e.target.value
+                          .toLowerCase()
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .replace(/[^a-z0-9._-]/g, ""),
+                      )
+                    }
+                    className="h-9.5 pl-7 rounded-xl text-xs sm:text-sm font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* E-mail de Contato */}
               <div className="space-y-1.5">
                 <Label htmlFor="edit-email" className="text-xs font-semibold">
-                  E-mail de Login
+                  E-mail{" "}
+                  <span className="text-muted-foreground text-[10px] font-normal">(Opcional)</span>
                 </Label>
                 <Input
                   id="edit-email"
@@ -1016,7 +1141,7 @@ export function TeamManagement() {
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="h-9.5 rounded-xl text-xs sm:text-sm font-mono"
-                  required
+                  placeholder="Ex: colaborador@email.com"
                 />
               </div>
 

@@ -1,19 +1,19 @@
 export type Role = "garcom" | "cozinha" | "gestor" | "caixa";
 
 // --- MULTI-TENANT & RBAC ---
-export type NivelAcesso = "dev" | "dono_loja" | "gestor" | "colaborador";
+export type NivelAcesso = "dev" | "gestor" | "colaborador" | "dono_loja";
 
 export const NIVEL_LABEL: Record<NivelAcesso, string> = {
   dev: "Desenvolvedor (Super Admin)",
-  dono_loja: "Gestor",
   gestor: "Gestor",
+  dono_loja: "Gestor",
   colaborador: "Colaborador da Loja",
 };
 
 export const NIVEL_DESCRIPTION: Record<NivelAcesso, string> = {
   dev: "Acesso total e exclusivo ao cadastro e gestão de lojas cadastradas.",
-  dono_loja: "Acesso total aos dados da sua própria loja e gestão exclusiva da sua equipe.",
   gestor: "Acesso total aos dados da sua própria loja e gestão exclusiva da sua equipe.",
+  dono_loja: "Acesso total aos dados da sua própria loja e gestão exclusiva da sua equipe.",
   colaborador:
     "Acesso restrito apenas às operações rotineiras da loja (pedidos, cozinha ou caixa).",
 };

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/equipe")({
       { title: "Minha Equipe — Gestão de Colaboradores | Keep Serv" },
       {
         name: "description",
-        content: "Painel exclusivo para o Dono da Loja gerenciar sua equipe e definir acessos.",
+        content: "Painel exclusivo para o Gestor da Loja gerenciar sua equipe e definir acessos.",
       },
     ],
   }),
@@ -25,9 +25,9 @@ function EquipePage() {
   const { session, activeLoja } = useKeepServ();
   const navigate = useNavigate();
 
-  // --- MIDDLEWARE DE PROTEÇÃO DE ROTA (Item 5 da especificação) ---
-  // "Restrinja o acesso desta página APENAS para usuários com 'nivel === dono_loja'."
-  // Permite também o 'dev' caso esteja em modo de suporte.
+  // --- MIDDLEWARE DE PROTEÇÃO DE ROTA ---
+  // Acesso exclusivo ao Gestor da Loja (nivel: gestor / dono_loja).
+  // Desenvolvedor gerencia apenas lojas cadastradas e NÃO cadastra colaboradores.
   useEffect(() => {
     if (!session) {
       toast.error("Acesso restrito: faça login para acessar o painel da equipe.");
@@ -35,14 +35,56 @@ function EquipePage() {
       return () => clearTimeout(t);
     }
 
+    if (session.nivel === "dev") {
+      toast.error(
+        "Acesso restrito: o Desenvolvedor gerencia apenas lojas cadastradas e não cadastra colaboradores.",
+      );
+      const t = setTimeout(() => navigate({ to: "/dev/lojas" }), 1500);
+      return () => clearTimeout(t);
+    }
+
     if (session.nivel === "colaborador") {
       toast.error(
-        "Acesso negado: apenas o Dono da Loja (dono_loja) pode gerenciar a equipe de colaboradores.",
+        "Acesso negado: apenas o Gestor da Loja pode gerenciar a equipe de colaboradores.",
       );
       const t = setTimeout(() => navigate({ to: "/pedidos" }), 1500);
       return () => clearTimeout(t);
     }
   }, [session, navigate]);
+
+  // Se for desenvolvedor, bloqueia visualmente informando a regra
+  if (session && session.nivel === "dev") {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-lg px-4 py-16 text-center">
+          <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-6 shadow-md">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-600">
+              <ShieldAlert className="size-8" />
+            </div>
+            <h1 className="mt-4 font-display text-2xl font-bold text-foreground">
+              Acesso Exclusivo ao Gestor da Loja
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              Você está conectado como <strong>{session.name}</strong> com perfil de{" "}
+              <Badge className="bg-purple-600 text-white text-xs">
+                Desenvolvedor (Super Admin)
+              </Badge>
+              . O Desenvolvedor gerencia exclusivamente as <strong>lojas cadastradas</strong> e não
+              cadastra colaboradores. A gestão da equipe é de competência do Gestor de cada loja.
+            </p>
+            <div className="mt-6">
+              <Button
+                onClick={() => navigate({ to: "/dev/lojas" })}
+                className="w-full font-semibold"
+              >
+                Ir para o Painel de Lojas Cadastradas
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   // Se for colaborador, bloqueia visualmente e oferece navegação de volta aos pedidos
   if (session && session.nivel === "colaborador") {
@@ -54,15 +96,15 @@ function EquipePage() {
               <ShieldAlert className="size-8" />
             </div>
             <h1 className="mt-4 font-display text-2xl font-bold text-destructive">
-              Acesso Exclusivo ao Dono da Loja
+              Acesso Exclusivo ao Gestor da Loja
             </h1>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Você está conectado como <strong>{session.name}</strong> com perfil de{" "}
               <Badge variant="outline" className="text-xs">
                 Colaborador
               </Badge>
-              . A gestão de equipe e definição de acessos é reservada exclusivamente para o Dono da
-              Loja (<code>nivel: dono_loja</code>).
+              . A gestão de equipe e definição de acessos é reservada exclusivamente para o Gestor
+              da Loja (<code>nivel: gestor</code>).
             </p>
             <div className="mt-6">
               <Button onClick={() => navigate({ to: "/pedidos" })} className="w-full font-semibold">
@@ -103,7 +145,7 @@ function EquipePage() {
 
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs font-mono">
-                {session?.nivel === "dono_loja" ? "👑 Dono da Loja" : "🛠️ Super Admin (Dev)"}
+                👑 Gestor da Loja
               </Badge>
             </div>
           </div>

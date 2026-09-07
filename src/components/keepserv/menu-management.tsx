@@ -471,9 +471,7 @@ export function MenuManagement() {
                       <Camera className="size-3.5 text-muted-foreground" />
                       Sem foto cadastrada
                     </span>
-                    <span className="text-[10px] font-semibold text-primary">
-                      + Adicionar foto
-                    </span>
+                    <span className="text-[10px] font-semibold text-primary">+ Adicionar foto</span>
                   </button>
                 )}
 

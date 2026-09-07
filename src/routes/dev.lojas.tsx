@@ -85,11 +85,13 @@ function DevLojasPage() {
   const [cidade, setCidade] = useState("");
   const [telefone, setTelefone] = useState("");
 
-  const [donoNome, setDonoNome] = useState("");
-  const [donoEmail, setDonoEmail] = useState("");
-  const [donoSenha, setDonoSenha] = useState("keepserv");
-  const [donoTelefone, setDonoTelefone] = useState("");
-  const [showDonoSenha, setShowDonoSenha] = useState(false);
+  const [gestorNome, setGestorNome] = useState("");
+  const [gestorUsuario, setGestorUsuario] = useState("");
+  const [userTouchedGestorUsuario, setUserTouchedGestorUsuario] = useState(false);
+  const [gestorEmail, setGestorEmail] = useState("");
+  const [gestorSenha, setGestorSenha] = useState("keepserv");
+  const [gestorTelefone, setGestorTelefone] = useState("");
+  const [showGestorSenha, setShowGestorSenha] = useState(false);
 
   // Estados de Busca e Filtro
   const [search, setSearch] = useState("");
@@ -123,7 +125,7 @@ function DevLojasPage() {
       totalLojas: allLojas.length,
       ativas: allLojas.filter((l) => l.status === "ativo").length,
       inativas: allLojas.filter((l) => l.status === "inativo").length,
-      totalDonos: allUsers.filter((u) => u.nivel === "dono_loja").length,
+      totalGestores: allUsers.filter((u) => u.nivel === "gestor" || u.nivel === "dono_loja").length,
       totalColaboradores: allUsers.filter((u) => u.nivel === "colaborador").length,
     };
   }, [allLojas, allUsers]);
@@ -192,6 +194,11 @@ function DevLojasPage() {
   const handleCreateStore = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!gestorUsuario.trim()) {
+      toast.error("Informe o nome de usuário do gestor para login.");
+      return;
+    }
+
     const res = createLoja(
       {
         nome_fantasia: nomeFantasia,
@@ -201,10 +208,11 @@ function DevLojasPage() {
         telefone,
       },
       {
-        nome: donoNome,
-        email: donoEmail,
-        senha: donoSenha,
-        phone: donoTelefone,
+        nome: gestorNome,
+        usuario: gestorUsuario.trim().toLowerCase(),
+        senha: gestorSenha,
+        email: gestorEmail,
+        phone: gestorTelefone,
       },
     );
 
@@ -214,7 +222,7 @@ function DevLojasPage() {
     }
 
     toast.success(
-      `Loja "${res.loja?.nome_fantasia}" criada com sucesso! Dono "${res.dono?.nome}" cadastrado com nível "dono_loja".`,
+      `Loja "${res.loja?.nome_fantasia}" criada com sucesso! Gestor "${res.gestor?.nome || res.dono?.nome}" cadastrado com usuário "@${res.gestor?.usuario || res.dono?.usuario}".`,
     );
 
     // Limpa formulário
@@ -222,10 +230,12 @@ function DevLojasPage() {
     setCodigoLoja("");
     setCidade("");
     setTelefone("");
-    setDonoNome("");
-    setDonoEmail("");
-    setDonoSenha("keepserv");
-    setDonoTelefone("");
+    setGestorNome("");
+    setGestorUsuario("");
+    setUserTouchedGestorUsuario(false);
+    setGestorEmail("");
+    setGestorSenha("keepserv");
+    setGestorTelefone("");
   };
 
   const handleConfirmDelete = () => {
@@ -258,7 +268,7 @@ function DevLojasPage() {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                Cadastro e Gestão Multi-Tenant de Lojas & Donos
+                Cadastro e Gestão Multi-Tenant de Lojas Cadastradas & Gestores
               </p>
             </div>
           </div>
@@ -324,10 +334,10 @@ function DevLojasPage() {
           </div>
           <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 shadow-xs">
             <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-              Donos de Loja
+              Gestores de Loja
             </p>
             <p className="mt-1 font-display text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-              {stats.totalDonos}
+              {stats.totalGestores}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
@@ -350,7 +360,7 @@ function DevLojasPage() {
               <div>
                 <h2 className="font-display text-xl font-bold">Cadastrar Nova Loja</h2>
                 <p className="text-xs text-muted-foreground">
-                  Gere o código de acesso exclusivo e configure o Dono inicial.
+                  Gere o código de acesso exclusivo e configure o Gestor inicial da loja.
                 </p>
               </div>
             </div>
@@ -371,7 +381,18 @@ function DevLojasPage() {
                     required
                     placeholder="Ex: Bar do Alemão, Pizzaria Bella"
                     value={nomeFantasia}
-                    onChange={(e) => setNomeFantasia(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNomeFantasia(val);
+                      if (!userTouchedGestorUsuario && val.trim()) {
+                        const slug = val
+                          .toLowerCase()
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .replace(/[^a-z0-9]/g, "");
+                        setGestorUsuario(`gestor.${slug}`);
+                      }
+                    }}
                   />
                 </div>
 
@@ -398,7 +419,7 @@ function DevLojasPage() {
                     className="font-mono uppercase"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Este código é obrigatório para que os colaboradores e o dono façam login.
+                    Este código é obrigatório para que os colaboradores e o gestor façam login.
                   </p>
                 </div>
 
@@ -431,66 +452,95 @@ function DevLojasPage() {
                 </div>
               </div>
 
-              {/* Bloco: Primeiro Usuário (Dono da Loja - nivel: dono_loja) */}
+              {/* Bloco: Gestor da Loja (nivel: gestor) */}
               <div className="space-y-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                    2. Primeiro Usuário (Dono da Loja)
+                    2. Gestor da Loja
                   </p>
-                  <Badge className="bg-indigo-600 text-white text-[10px]">nivel: dono_loja</Badge>
+                  <Badge className="bg-indigo-600 text-white text-[10px]">nivel: gestor</Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  O sistema configurará este usuário como o gestor pagante com controle total sobre
-                  a loja e sua equipe.
+                  O sistema configurará este usuário como o Gestor com controle total sobre a loja e
+                  sua equipe. O desenvolvedor gerencia apenas lojas cadastradas e não cadastra
+                  colaboradores.
                 </p>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="donoNome" className="text-xs">
-                    Nome Completo do Dono *
+                  <Label htmlFor="gestorNome" className="text-xs font-semibold">
+                    Nome Completo do Gestor *
                   </Label>
                   <Input
-                    id="donoNome"
+                    id="gestorNome"
                     required
                     placeholder="Ex: Carlos Eduardo Silva"
-                    value={donoNome}
-                    onChange={(e) => setDonoNome(e.target.value)}
+                    value={gestorNome}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setGestorNome(val);
+                      if (!userTouchedGestorUsuario && val.trim()) {
+                        const slug = val
+                          .toLowerCase()
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .replace(/[^a-z0-9]/g, ".");
+                        setGestorUsuario(slug);
+                      }
+                    }}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="donoEmail" className="text-xs">
-                    E-mail de Login do Dono *
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="gestorUsuario" className="text-xs font-semibold">
+                      Nome de Usuário para Login *
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      login via usuário
+                    </span>
+                  </div>
                   <Input
-                    id="donoEmail"
-                    type="email"
+                    id="gestorUsuario"
                     required
-                    placeholder="Ex: carlos@restaurante.com"
-                    value={donoEmail}
-                    onChange={(e) => setDonoEmail(e.target.value)}
+                    placeholder="Ex: carlos.gestor ou gestor"
+                    value={gestorUsuario}
+                    onChange={(e) => {
+                      setUserTouchedGestorUsuario(true);
+                      setGestorUsuario(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/\s+/g, "")
+                          .replace(/[^a-z0-9._-]/g, ""),
+                      );
+                    }}
+                    className="font-mono text-xs sm:text-sm"
                   />
+                  <p className="text-[11px] text-muted-foreground">
+                    O gestor utilizará este nome de usuário e o código da loja para acessar o
+                    sistema.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="donoSenha" className="text-xs">
+                    <Label htmlFor="gestorSenha" className="text-xs font-semibold">
                       Senha Provisória *
                     </Label>
                     <div className="relative">
                       <Input
-                        id="donoSenha"
-                        type={showDonoSenha ? "text" : "password"}
+                        id="gestorSenha"
+                        type={showGestorSenha ? "text" : "password"}
                         required
-                        value={donoSenha}
-                        onChange={(e) => setDonoSenha(e.target.value)}
+                        value={gestorSenha}
+                        onChange={(e) => setGestorSenha(e.target.value)}
                         className="pr-8"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowDonoSenha(!showDonoSenha)}
+                        onClick={() => setShowGestorSenha(!showGestorSenha)}
                         className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground"
                       >
-                        {showDonoSenha ? (
+                        {showGestorSenha ? (
                           <EyeOff className="size-3.5" />
                         ) : (
                           <Eye className="size-3.5" />
@@ -499,21 +549,34 @@ function DevLojasPage() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="donoTelefone" className="text-xs">
+                    <Label htmlFor="gestorTelefone" className="text-xs font-semibold">
                       WhatsApp / Telefone
                     </Label>
                     <Input
-                      id="donoTelefone"
+                      id="gestorTelefone"
                       placeholder="(11) 99999-0000"
-                      value={donoTelefone}
-                      onChange={(e) => setDonoTelefone(e.target.value)}
+                      value={gestorTelefone}
+                      onChange={(e) => setGestorTelefone(e.target.value)}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="gestorEmail" className="text-xs font-semibold">
+                    E-mail de Contato (Opcional)
+                  </Label>
+                  <Input
+                    id="gestorEmail"
+                    type="email"
+                    placeholder="Ex: carlos@restaurante.com (opcional)"
+                    value={gestorEmail}
+                    onChange={(e) => setGestorEmail(e.target.value)}
+                  />
                 </div>
               </div>
 
               <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                Cadastrar Loja e Dono Inicial
+                Cadastrar Loja e Gestor Inicial
               </Button>
             </form>
           </div>
@@ -553,9 +616,11 @@ function DevLojasPage() {
             {/* Grid de Lojas */}
             <div className="grid gap-3">
               {filteredLojas.map((loja) => {
-                const owner = allUsers.find(
+                const gestor = allUsers.find(
                   (u) =>
-                    u.id === loja.dono_id || (u.loja_id === loja.id && u.nivel === "dono_loja"),
+                    u.id === loja.gestor_id ||
+                    u.id === loja.dono_id ||
+                    (u.loja_id === loja.id && (u.nivel === "gestor" || u.nivel === "dono_loja")),
                 );
                 const teamCount = allUsers.filter((u) => u.loja_id === loja.id).length;
                 const isCopied = copiedCode === loja.codigo_loja;
@@ -641,24 +706,27 @@ function DevLojasPage() {
                       </div>
                     </div>
 
-                    {/* Detalhes do Dono e Equipe */}
+                    {/* Detalhes do Gestor e Equipe */}
                     <div className="mt-3 grid gap-2 sm:grid-cols-2 rounded-lg border border-border/70 bg-muted/40 p-2.5 text-xs">
                       <div>
-                        <span className="font-semibold text-foreground">Dono da Loja:</span>
+                        <span className="font-semibold text-foreground">Gestor da Loja:</span>
                         <div className="text-muted-foreground truncate">
-                          {owner ? (
+                          {gestor ? (
                             <span>
-                              {owner.nome || owner.name} ({owner.email})
+                              {gestor.nome || gestor.name}{" "}
+                              <strong className="text-foreground font-mono">
+                                (@{gestor.usuario || gestor.username || gestor.email.split("@")[0]})
+                              </strong>
                             </span>
                           ) : (
-                            <span className="text-amber-600 italic">Dono não vinculado</span>
+                            <span className="text-amber-600 italic">Gestor não vinculado</span>
                           )}
                         </div>
                       </div>
                       <div>
                         <span className="font-semibold text-foreground">Total da Equipe:</span>
                         <div className="text-muted-foreground">
-                          {teamCount} usuários cadastrados neste tenant
+                          {teamCount} usuários nesta loja (cadastrados pelo gestor)
                         </div>
                       </div>
                     </div>

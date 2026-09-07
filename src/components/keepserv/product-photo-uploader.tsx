@@ -127,7 +127,11 @@ export function ProductPhotoUploader({
       toast.error("Cole ou digite a URL da imagem.");
       return;
     }
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:")) {
+    if (
+      !trimmed.startsWith("http://") &&
+      !trimmed.startsWith("https://") &&
+      !trimmed.startsWith("data:")
+    ) {
       toast.error("Informe um link de imagem válido iniciando com https://");
       return;
     }
@@ -205,9 +209,7 @@ export function ProductPhotoUploader({
                 {productName || "Foto selecionada"}
               </span>
               <span className="text-[10px] text-white/80">
-                {value.startsWith("data:")
-                  ? "Arquivo local otimizado"
-                  : "Imagem externa vinculada"}
+                {value.startsWith("data:") ? "Arquivo local otimizado" : "Imagem externa vinculada"}
               </span>
             </div>
 
@@ -385,7 +387,8 @@ export function ProductPhotoUploader({
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Cole o link direto da imagem hospedada na nuvem, banco de fotos ou rede social do restaurante.
+                Cole o link direto da imagem hospedada na nuvem, banco de fotos ou rede social do
+                restaurante.
               </p>
             </div>
           )}

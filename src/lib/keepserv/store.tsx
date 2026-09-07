@@ -121,7 +121,13 @@ interface KeepServContext {
   createLoja: (
     lojaInput: NewLojaInput,
     gestorInput: NewGestorInput,
-  ) => { success: boolean; message?: string; loja?: Loja; dono?: UserAccount; gestor?: UserAccount };
+  ) => {
+    success: boolean;
+    message?: string;
+    loja?: Loja;
+    dono?: UserAccount;
+    gestor?: UserAccount;
+  };
   updateLoja: (id: string, data: Partial<Loja>) => void;
   toggleLojaStatus: (id: string) => void;
   deleteLoja: (id: string) => { success: boolean; message?: string };
@@ -428,7 +434,13 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
     (
       lojaInput: NewLojaInput,
       gestorInput: NewGestorInput,
-    ): { success: boolean; message?: string; loja?: Loja; dono?: UserAccount; gestor?: UserAccount } => {
+    ): {
+      success: boolean;
+      message?: string;
+      loja?: Loja;
+      dono?: UserAccount;
+      gestor?: UserAccount;
+    } => {
       // Validação de permissão: apenas 'dev'
       if (session && session.nivel !== "dev") {
         return {
@@ -443,12 +455,17 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       const cleanGestorNome = gestorInput.nome.trim();
       const cleanGestorUsuario = (
         gestorInput.usuario ||
-        gestorInput.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_")
-      ).trim().toLowerCase();
-      const cleanGestorEmail = (
+        gestorInput.nome
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "_")
+      )
+        .trim()
+        .toLowerCase();
+      const cleanGestorEmail =
         gestorInput.email?.trim().toLowerCase() ||
-        `${cleanGestorUsuario}@${cleanCodigo.toLowerCase()}.keepserv.app`
-      );
+        `${cleanGestorUsuario}@${cleanCodigo.toLowerCase()}.keepserv.app`;
       const cleanGestorSenha = gestorInput.senha.trim();
 
       if (!cleanNome) {
@@ -486,7 +503,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       const usernameExists = allUsers.some(
         (u) =>
           (u.usuario && u.usuario.trim().toLowerCase() === cleanGestorUsuario) ||
-          (u.username && u.username.trim().toLowerCase() === cleanGestorUsuario)
+          (u.username && u.username.trim().toLowerCase() === cleanGestorUsuario),
       );
       if (usernameExists) {
         return {
@@ -639,7 +656,8 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         if (!found) {
           return {
             success: false,
-            message: "Nome de usuário não cadastrado na equipe desta loja. Verifique o usuário digitado.",
+            message:
+              "Nome de usuário não cadastrado na equipe desta loja. Verifique o usuário digitado.",
           };
         }
 
@@ -825,8 +843,14 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       const rawUsuario = (
         input.usuario ||
         input.username ||
-        input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ".")
-      ).trim().toLowerCase();
+        input.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, ".")
+      )
+        .trim()
+        .toLowerCase();
       const cleanUsuario = rawUsuario || `user.${Date.now()}`;
       const cleanEmail =
         input.email?.trim().toLowerCase() ||
@@ -925,15 +949,18 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         return { success: false, message: "Você não pode remover seu próprio usuário logado." };
       }
 
-      // Impede deletar o único dono da loja
-      if (target.nivel === "dono_loja") {
+      // Impede deletar o único gestor da loja
+      if (target.nivel === "dono_loja" || target.nivel === "gestor") {
         const otherOwners = allUsers.filter(
-          (u) => u.loja_id === target.loja_id && u.nivel === "dono_loja" && u.active,
+          (u) =>
+            u.loja_id === target.loja_id &&
+            (u.nivel === "dono_loja" || u.nivel === "gestor") &&
+            u.active,
         );
         if (otherOwners.length <= 1) {
           return {
             success: false,
-            message: "É obrigatório manter ao menos um Dono da Loja cadastrado.",
+            message: "É obrigatório manter ao menos um Gestor da Loja cadastrado.",
           };
         }
       }

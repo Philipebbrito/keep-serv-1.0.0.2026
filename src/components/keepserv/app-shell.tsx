@@ -30,7 +30,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!session) return null;
 
   const isDev = session.nivel === "dev";
-  const isDono = session.nivel === "dono_loja";
+  const isGestor =
+    session.nivel === "gestor" || session.nivel === "dono_loja" || session.role === "gestor";
 
   const nav = [
     { to: "/pedidos", label: "Quadro de pedidos", icon: KanbanSquare, show: true },
@@ -38,19 +39,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       to: "/caixa",
       label: "Caixa",
       icon: Wallet,
-      show: isDev || isDono || session.role === "caixa" || session.role === "gestor",
+      show: isDev || isGestor || session.role === "caixa",
     },
     {
       to: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      show: isDev || isDono || session.role === "gestor",
+      show: isDev || isGestor,
     },
     {
       to: "/equipe",
       label: "Minha Equipe",
       icon: Users,
-      show: isDev || isDono, // Exclusivo para Dono da Loja (ou dev)
+      show: isGestor && !isDev, // Exclusivo para Gestor da Loja (Dev gerencia apenas lojas cadastradas)
     },
     {
       to: "/dev/lojas",
@@ -131,9 +132,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     🛠️ Dev Super Admin
                   </Badge>
                 )}
-                {session.nivel === "dono_loja" && (
+                {(session.nivel === "gestor" || session.nivel === "dono_loja") && (
                   <Badge className="bg-indigo-600 text-white text-[9px] px-1.5 py-0">
-                    👑 Dono da Loja
+                    👑 Gestor da Loja
                   </Badge>
                 )}
                 {session.nivel === "colaborador" && (

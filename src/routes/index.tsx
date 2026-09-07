@@ -105,7 +105,9 @@ function LoginPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent">gestor:</span>
-                  <span>Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.</span>
+                  <span>
+                    Acesso aos dados da sua própria loja e gestão exclusiva da sua equipe.
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-mono text-xs font-bold text-accent">colaborador:</span>

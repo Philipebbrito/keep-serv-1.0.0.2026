@@ -143,7 +143,6 @@ function LoginPage() {
                 Keep<span className="text-accent">Serv</span>
               </span>
             </div>
-            
           </div>
 
           <div>

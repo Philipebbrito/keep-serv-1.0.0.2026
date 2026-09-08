@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  HeartHandshake,
   KanbanSquare,
   LayoutDashboard,
   LogOut,
@@ -12,6 +13,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   QrCode,
+  Receipt,
   Shield,
   Store,
   Users,
@@ -23,6 +25,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getCustomerBirthdayInfo } from "@/lib/keepserv/customers";
 import { useKeepServ } from "@/lib/keepserv/store";
 import { ROLE_LABEL, urgencyFor } from "@/lib/keepserv/types";
 import { cn } from "@/lib/utils";
@@ -44,7 +47,18 @@ interface NavGroup {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { session, activeLoja, logout, orders, stockItems, products, users, now } = useKeepServ();
+  const {
+    session,
+    activeLoja,
+    logout,
+    orders,
+    stockItems,
+    products,
+    users,
+    bills,
+    customers,
+    now,
+  } = useKeepServ();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -71,6 +85,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("popstate", handleUrl);
     return () => window.removeEventListener("popstate", handleUrl);
   }, [pathname]);
+
+  // Rastreia busca da rota pelo router para reação imediata
+  const routerLocation = useRouterState({ select: (s) => s.location });
 
   // Salva preferência no localStorage
   const toggleCollapse = () => {
@@ -120,6 +137,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const lateOrders = activeOrders.filter((o) => urgencyFor(o, now) === "late");
   const openOrdersToPay = orders.filter((o) => o.status !== "pago");
   const lowStockCount = stockItems.filter((s) => s.currentStock <= s.minStock).length;
+  const occupiedTablesCount = new Set(activeOrders.map((o) => o.table)).size;
+  const pendingBillsCount = bills.filter(
+    (b) =>
+      b.type === "pagar" &&
+      (b.status === "pendente" || b.status === "agendado" || b.status === "vencido"),
+  ).length;
+  const overdueBillsCount = bills.filter(
+    (b) => b.type === "pagar" && b.status !== "pago" && (b.status === "vencido" || b.dueDate < now),
+  ).length;
+  const birthdayCount = customers.filter((c) => getCustomerBirthdayInfo(c).isThisMonth).length;
+
+  // Rastreia busca da rota pelo router para reação imediata
+  const activeTabParam = ((routerLocation?.search as Record<string, unknown>)?.tab as string) || "";
+  const effectiveSearch = activeTabParam
+    ? `?tab=${activeTabParam}`
+    : typeof window !== "undefined"
+      ? window.location.search
+      : "";
 
   // Agrupamento semântico de navegação
   const navGroups: NavGroup[] = [
@@ -161,6 +196,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           search: "?tab=operacao",
           label: "Painel Geral",
           icon: LayoutDashboard,
+          badge: occupiedTablesCount > 0 ? `${occupiedTablesCount} mesas` : null,
+          badgeVariant: lateOrders.length > 0 ? "destructive" : "secondary",
           show: !isDev && isGestor,
         },
         {
@@ -168,7 +205,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           search: "?tab=cardapio",
           label: "Cardápio & Itens",
           icon: UtensilsCrossed,
-          badge: products.length > 0 ? products.length : null,
+          badge: products.length > 0 ? `${products.length} itens` : null,
           badgeVariant: "secondary",
           show: !isDev && isGestor,
         },
@@ -177,7 +214,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           search: "?tab=estoque",
           label: "Estoque & Insumos",
           icon: Boxes,
-          badge: lowStockCount > 0 ? `${lowStockCount} baixo` : null,
+          badge: lowStockCount > 0 ? `${lowStockCount} baixo` : `${stockItems.length} itens`,
           badgeVariant: lowStockCount > 0 ? "warning" : "secondary",
           show: !isDev && isGestor,
         },
@@ -192,10 +229,38 @@ export function AppShell({ children }: { children: ReactNode }) {
         },
         {
           to: "/dashboard",
+          search: "?tab=contas_pagar_receber",
+          label: "Contas a Pagar & Receber",
+          icon: Receipt,
+          badge:
+            overdueBillsCount > 0
+              ? `${overdueBillsCount} vencidos`
+              : pendingBillsCount > 0
+                ? `${pendingBillsCount} títulos`
+                : null,
+          badgeVariant: overdueBillsCount > 0 ? "destructive" : "secondary",
+          show: !isDev && isGestor,
+        },
+        {
+          to: "/dashboard",
+          search: "?tab=clientes_crm",
+          label: "Clientes (CRM)",
+          icon: HeartHandshake,
+          badge:
+            birthdayCount > 0
+              ? `${birthdayCount} niver`
+              : customers.length > 0
+                ? `${customers.length} clientes`
+                : null,
+          badgeVariant: birthdayCount > 0 ? "warning" : "secondary",
+          show: !isDev && isGestor,
+        },
+        {
+          to: "/dashboard",
           search: "?tab=equipe",
           label: "Minha Equipe",
           icon: Users,
-          badge: users.length > 0 ? users.length : null,
+          badge: users.length > 0 ? `${users.length} membros` : null,
           badgeVariant: "secondary",
           show: !isDev && isGestor,
         },
@@ -219,21 +284,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Helper de checagem de rota ativa
   const isItemActive = (item: NavItem) => {
     if (item.external) return false;
-    if (item.search) {
-      if (item.to === "/dashboard" && item.search === "?tab=operacao") {
-        return (
-          pathname === "/dashboard" && (currentSearch === "" || currentSearch === "?tab=operacao")
-        );
-      }
-      return pathname === item.to && currentSearch === item.search;
+    if (item.to === "/dashboard") {
+      if (pathname !== "/dashboard") return false;
+      const expectedTab = item.search?.replace("?tab=", "") || "operacao";
+      const currentTab = activeTabParam || effectiveSearch.replace("?tab=", "") || "operacao";
+      return currentTab === expectedTab;
     }
-    if (pathname === item.to) {
-      if (item.to === "/dashboard" && currentSearch && currentSearch !== "") {
-        return currentSearch === "?tab=operacao";
-      }
-      return true;
-    }
-    return false;
+    return pathname === item.to;
   };
 
   // Título e ícone da seção atual para o Breadcrumb do Top Header

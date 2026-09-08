@@ -81,13 +81,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Keep Serv" },
       {
         name: "description",
-        content: "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
+        content:
+          "Sistema de gestão para restaurantes: comandas, estoque, cardápio, fluxo de caixa, contas a pagar/receber com conciliação e CRM de clientes.",
       },
       { name: "author", content: "Keep Serv" },
       { property: "og:title", content: "Keep Serv" },
       {
         property: "og:description",
-        content: "Sistema de gestão de pedidos em tempo real para bares e restaurantes.",
+        content:
+          "Sistema de gestão para restaurantes: comandas, estoque, cardápio, fluxo de caixa, contas a pagar/receber com conciliação e CRM de clientes.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -37,6 +37,24 @@ import {
   type StockItem,
   type StockMovement,
 } from "./stock";
+import {
+  INITIAL_BILLS,
+  INITIAL_BANK_STATEMENTS,
+  BANK_ACCOUNTS,
+  type BankAccount,
+  type BankStatementItem,
+  type BillItem,
+  type NewBillInput,
+} from "./bills";
+import {
+  buildSeedCustomers,
+  calculateCustomerMetrics,
+  type Customer,
+  type CustomerPreferences,
+  type CustomerVisit,
+  type NewCustomerInput,
+  type NewCustomerVisitInput,
+} from "./customers";
 
 export interface NewLojaInput {
   nome_fantasia: string;
@@ -200,6 +218,39 @@ interface KeepServContext {
     type?: "entrada" | "saida" | "ajuste",
   ) => void;
   resetStockToDefault: () => void;
+
+  // Contas a Pagar & Receber & Conciliação Bancária
+  bills: BillItem[];
+  allBills: BillItem[];
+  bankAccounts: BankAccount[];
+  bankStatements: BankStatementItem[];
+  addBill: (input: NewBillInput) => BillItem;
+  updateBill: (id: string, data: Partial<Omit<BillItem, "id">>) => void;
+  deleteBill: (id: string) => { success: boolean; message?: string };
+  payBill: (
+    id: string,
+    options?: {
+      paidAt?: number;
+      paidAmount?: number;
+      paymentMethod?: string;
+      bankAccount?: string;
+      syncWithCashFlow?: boolean;
+    },
+  ) => void;
+  reconcileBill: (id: string, conciliated: boolean, ref?: string) => void;
+  reconcileStatementItem: (statementId: string, billId?: string) => void;
+  autoReconcileAll: () => { matchedCount: number; message: string };
+  resetBillsToDefault: () => void;
+
+  // Clientes & CRM
+  customers: Customer[];
+  allCustomers: Customer[];
+  addCustomer: (input: NewCustomerInput) => Customer;
+  updateCustomer: (id: string, data: Partial<Customer>) => void;
+  deleteCustomer: (id: string) => { success: boolean; message?: string };
+  recordCustomerVisit: (customerId: string, visit: NewCustomerVisitInput) => void;
+  findCustomerByPhoneOrName: (query: string) => Customer | undefined;
+  resetCustomersToDefault: () => void;
 }
 
 const Ctx = createContext<KeepServContext | null>(null);
@@ -401,6 +452,84 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
   });
   const [now, setNow] = useState(() => Date.now());
 
+  // CONTAS A PAGAR & RECEBER (com isolamento por loja_id)
+  const [allBills, setAllBills] = useState<BillItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("keepserv_bills_v2");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar contas do localStorage", e);
+      }
+    }
+    return INITIAL_BILLS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("keepserv_bills_v2", JSON.stringify(allBills));
+      } catch (e) {
+        console.error("Erro ao salvar contas no localStorage", e);
+      }
+    }
+  }, [allBills]);
+
+  // EXTRATO BANCÁRIO PARA CONCILIAÇÃO
+  const [allBankStatements, setAllBankStatements] = useState<BankStatementItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("keepserv_bank_statements_v2");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar extrato do localStorage", e);
+      }
+    }
+    return INITIAL_BANK_STATEMENTS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("keepserv_bank_statements_v2", JSON.stringify(allBankStatements));
+      } catch (e) {
+        console.error("Erro ao salvar extrato no localStorage", e);
+      }
+    }
+  }, [allBankStatements]);
+
+  // CLIENTES & CRM (com isolamento por loja_id)
+  const [allCustomers, setAllCustomers] = useState<Customer[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("keepserv_customers_v1");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar clientes do localStorage", e);
+      }
+    }
+    return buildSeedCustomers(Date.now());
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("keepserv_customers_v1", JSON.stringify(allCustomers));
+      } catch (e) {
+        console.error("Erro ao salvar clientes no localStorage", e);
+      }
+    }
+  }, [allCustomers]);
+
   // Seed de pedidos e caixa
   useEffect(() => {
     const t = Date.now();
@@ -449,6 +578,21 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
     if (!currentLojaId) return allCashFlowEntries;
     return allCashFlowEntries.filter((c) => !c.loja_id || c.loja_id === currentLojaId);
   }, [allCashFlowEntries, currentLojaId]);
+
+  const bills = useMemo(() => {
+    if (!currentLojaId) return allBills;
+    return allBills.filter((b) => !b.loja_id || b.loja_id === currentLojaId);
+  }, [allBills, currentLojaId]);
+
+  const bankStatements = useMemo(() => {
+    if (!currentLojaId) return allBankStatements;
+    return allBankStatements.filter((s) => !s.loja_id || s.loja_id === currentLojaId);
+  }, [allBankStatements, currentLojaId]);
+
+  const customers = useMemo(() => {
+    if (!currentLojaId) return allCustomers;
+    return allCustomers.filter((c) => !c.loja_id || c.loja_id === currentLojaId);
+  }, [allCustomers, currentLojaId]);
 
   const users = useMemo(() => {
     if (session?.nivel === "dev" && !currentLojaId) return allUsers;
@@ -1200,12 +1344,33 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
   const registerPayment = useCallback(
     (orderId: string, method: PaymentMethod, splitCount: number) => {
       const t = Date.now();
-      let paidOrderInfo: { code: string; table: number; amount: number; loja_id: string } | null =
-        null;
+      let paidOrderInfo: {
+        code: string;
+        table: number;
+        amount: number;
+        loja_id: string;
+        customerName?: string;
+        customerPhone?: string;
+        itemsSummary: string;
+        guests: number;
+        waiter: string;
+      } | null = null;
 
       patchOrder(orderId, (o) => {
         const amount = orderTotal(o);
-        paidOrderInfo = { code: o.code, table: o.table, amount, loja_id: o.loja_id };
+        const itemsSummary =
+          o.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ") || "Itens variados";
+        paidOrderInfo = {
+          code: o.code,
+          table: o.table,
+          amount,
+          loja_id: o.loja_id,
+          customerName: o.customerName,
+          customerPhone: o.customerPhone,
+          itemsSummary,
+          guests: o.guests || 1,
+          waiter: o.waiter || "Atendimento",
+        };
         return {
           ...o,
           status: "pago",
@@ -1227,6 +1392,11 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
           table: number;
           amount: number;
           loja_id: string;
+          customerName?: string;
+          customerPhone?: string;
+          itemsSummary: string;
+          guests: number;
+          waiter: string;
         };
         setAllCashFlowEntries((prev) => [
           {
@@ -1245,6 +1415,96 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
           },
           ...prev,
         ]);
+
+        // Se a comanda possuía identificação de cliente, vincula ou registra automaticamente no CRM
+        const cName = info.customerName?.trim();
+        const cPhone = info.customerPhone?.trim() || "";
+        if (cName || cPhone) {
+          const cleanPhone = cPhone.replace(/\D/g, "");
+          const normName = (cName || "").toLowerCase();
+
+          setAllCustomers((prev) => {
+            const existingIndex = prev.findIndex((c) => {
+              if (
+                cleanPhone &&
+                cleanPhone.length >= 8 &&
+                c.phone.replace(/\D/g, "").includes(cleanPhone)
+              ) {
+                return true;
+              }
+              if (normName && c.name.trim().toLowerCase() === normName) {
+                return true;
+              }
+              return false;
+            });
+
+            const visitItem: CustomerVisit = {
+              id: uid("vst"),
+              orderId,
+              orderCode: info.code,
+              table: info.table,
+              date: t,
+              amount: info.amount,
+              guests: info.guests,
+              itemsSummary: info.itemsSummary,
+              paymentMethod: method,
+              waiter: info.waiter,
+              notes: `Comanda ${info.code} finalizada e paga no caixa (${method}).`,
+            };
+
+            if (existingIndex !== -1) {
+              const target = prev[existingIndex];
+              const updatedVisits = [visitItem, ...target.visits];
+              const updatedMetrics = calculateCustomerMetrics(updatedVisits);
+
+              let updatedStatus = target.status;
+              const updatedTags = [...target.tags];
+              if (updatedMetrics.totalVisits >= 10 || updatedMetrics.totalSpent >= 3000) {
+                updatedStatus = "vip";
+                if (!updatedTags.includes("VIP")) updatedTags.push("VIP");
+              } else if (updatedMetrics.totalVisits >= 4 || updatedMetrics.totalSpent >= 1000) {
+                if (updatedStatus !== "vip") updatedStatus = "frequente";
+                if (!updatedTags.includes("Frequente")) updatedTags.push("Frequente");
+              }
+
+              const updatedCust: Customer = {
+                ...target,
+                status: updatedStatus,
+                tags: updatedTags,
+                metrics: updatedMetrics,
+                visits: updatedVisits,
+                updatedAt: t,
+              };
+
+              const clone = [...prev];
+              clone[existingIndex] = updatedCust;
+              return clone;
+            } else if (cName) {
+              const newCust: Customer = {
+                id: uid("cust"),
+                loja_id: info.loja_id || currentLojaId || "loja-1",
+                name: cName,
+                phone: cPhone || "(11) 99999-9999",
+                status: "padrao",
+                tags: ["Novo Cliente", "Cadastrado no Caixa"],
+                preferences: {
+                  dietaryRestrictions: [],
+                  favoriteDrinks: [],
+                  favoriteDishes: [],
+                  preferredPayment: method,
+                },
+                metrics: calculateCustomerMetrics([visitItem]),
+                topItems: [],
+                topCategories: [],
+                visits: [visitItem],
+                createdAt: t,
+                updatedAt: t,
+              };
+              return [newCust, ...prev];
+            }
+            return prev;
+          });
+        }
       }
     },
     [patchOrder, session?.name, session?.role, currentLojaId],
@@ -1417,8 +1677,59 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
           ],
         };
       });
+
+      if (data.register && data.name?.trim()) {
+        const cName = data.name.trim();
+        const cPhone = data.phone?.trim() || "";
+        const cleanPhone = cPhone.replace(/\D/g, "");
+        const normName = cName.toLowerCase();
+
+        setAllCustomers((prev) => {
+          const exists = prev.some((c) => {
+            if (
+              cleanPhone &&
+              cleanPhone.length >= 8 &&
+              c.phone.replace(/\D/g, "").includes(cleanPhone)
+            ) {
+              return true;
+            }
+            if (normName && c.name.trim().toLowerCase() === normName) {
+              return true;
+            }
+            return false;
+          });
+          if (exists) return prev;
+
+          const newCust: Customer = {
+            id: uid("cust"),
+            loja_id: currentLojaId || "loja-1",
+            name: cName,
+            phone: cPhone || "(11) 99999-9999",
+            status: "padrao",
+            tags: ["Novo Cliente", "Cadastro via Mesa"],
+            preferences: {
+              dietaryRestrictions: [],
+              favoriteDrinks: [],
+              favoriteDishes: [],
+            },
+            metrics: {
+              totalVisits: 0,
+              totalSpent: 0,
+              averageTicket: 0,
+              maxTicket: 0,
+              visitFrequency: "Primeira Visita",
+            },
+            topItems: [],
+            topCategories: [],
+            visits: [],
+            createdAt: t,
+            updatedAt: t,
+          };
+          return [newCust, ...prev];
+        });
+      }
     },
-    [patchOrder],
+    [patchOrder, currentLojaId],
   );
 
   // --- MÉTODOS DE PRODUTOS DO CARDÁPIO ---
@@ -1650,6 +1961,373 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
     );
   }, [currentLojaId]);
 
+  // --- MÉTODOS DE CONTAS A PAGAR & RECEBER ---
+  const addBill = useCallback(
+    (input: NewBillInput): BillItem => {
+      const newBill: BillItem = {
+        id: `bill-${Date.now()}`,
+        loja_id: input.loja_id || currentLojaId || "loja-1",
+        type: input.type,
+        title: input.title.trim(),
+        entityName: input.entityName.trim(),
+        entityDocument: input.entityDocument?.trim(),
+        category: input.category,
+        isFixedCost: Boolean(input.isFixedCost),
+        recurrence: input.recurrence || "nenhuma",
+        amount: Number(input.amount) || 0,
+        dueDate: input.dueDate,
+        issueDate: input.issueDate || Date.now(),
+        status: "pendente",
+        barcode: input.barcode?.trim(),
+        boletoBank: input.boletoBank?.trim(),
+        invoiceNumber: input.invoiceNumber?.trim(),
+        bankAccount: input.bankAccount || "Itaú PJ - Operacional Principal",
+        conciliationStatus: "pendente",
+        notes: input.notes?.trim(),
+        author: session?.name || "Gestor",
+        createdAt: Date.now(),
+      };
+
+      setAllBills((prev) => [newBill, ...prev]);
+      return newBill;
+    },
+    [currentLojaId, session?.name],
+  );
+
+  const updateBill = useCallback((id: string, data: Partial<Omit<BillItem, "id">>) => {
+    setAllBills((prev) => prev.map((b) => (b.id === id ? { ...b, ...data } : b)));
+  }, []);
+
+  const deleteBill = useCallback((id: string) => {
+    setAllBills((prev) => prev.filter((b) => b.id !== id));
+    return { success: true };
+  }, []);
+
+  const payBill = useCallback(
+    (
+      id: string,
+      options?: {
+        paidAt?: number;
+        paidAmount?: number;
+        paymentMethod?: string;
+        bankAccount?: string;
+        syncWithCashFlow?: boolean;
+      },
+    ) => {
+      const target = allBills.find((b) => b.id === id);
+      if (!target) return;
+
+      const paidAtTime = options?.paidAt || Date.now();
+      const finalPaidAmount = options?.paidAmount ?? target.amount;
+      const finalMethod = options?.paymentMethod || "transferencia";
+      const finalAccount =
+        options?.bankAccount || target.bankAccount || "Itaú PJ - Operacional Principal";
+
+      setAllBills((prev) =>
+        prev.map((b) => {
+          if (b.id !== id) return b;
+          return {
+            ...b,
+            status: "pago",
+            paidAt: paidAtTime,
+            paidAmount: finalPaidAmount,
+            paymentMethod: finalMethod,
+            bankAccount: finalAccount,
+          };
+        }),
+      );
+
+      // Sincroniza automaticamente com o Fluxo de Caixa se solicitado
+      if (options?.syncWithCashFlow !== false) {
+        const isExpense = target.type === "pagar";
+        let cfCategory: CashFlowCategory = "outros";
+        if (isExpense) {
+          if (target.category.startsWith("fornecedor")) cfCategory = "insumos";
+          else if (target.category === "manutencao") cfCategory = "manutencao";
+          else cfCategory = "servicos";
+        } else {
+          cfCategory = "venda_comanda";
+        }
+
+        const cfEntry: CashFlowEntry = {
+          id: `cf-bill-${Date.now()}`,
+          loja_id: target.loja_id,
+          type: isExpense ? "saida" : "entrada",
+          category: cfCategory,
+          description: `${isExpense ? "Pagamento" : "Recebimento"}: ${target.title} (${target.entityName})`,
+          amount: finalPaidAmount,
+          method: (finalMethod as PaymentMethod) || "transferencia",
+          timestamp: paidAtTime,
+          author: session?.name || "Gestor",
+          notes: `Lançamento originado de Contas a ${isExpense ? "Pagar" : "Receber"}. Conta: ${finalAccount}.`,
+        };
+        setAllCashFlowEntries((prev) => [cfEntry, ...prev]);
+      }
+    },
+    [allBills, session?.name],
+  );
+
+  const reconcileBill = useCallback((id: string, conciliated: boolean, ref?: string) => {
+    setAllBills((prev) =>
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        return {
+          ...b,
+          conciliationStatus: conciliated ? "conciliado" : "pendente",
+          conciliatedAt: conciliated ? Date.now() : undefined,
+          conciliationRef: ref || b.conciliationRef || `CONC-${Date.now().toString().slice(-6)}`,
+        };
+      }),
+    );
+  }, []);
+
+  const reconcileStatementItem = useCallback((statementId: string, billId?: string) => {
+    setAllBankStatements((prev) =>
+      prev.map((s) =>
+        s.id === statementId
+          ? { ...s, conciliated: true, matchedBillId: billId || s.matchedBillId }
+          : s,
+      ),
+    );
+    if (billId) {
+      setAllBills((prev) =>
+        prev.map((b) =>
+          b.id === billId
+            ? {
+                ...b,
+                conciliationStatus: "conciliado",
+                conciliatedAt: Date.now(),
+                conciliationRef: statementId,
+              }
+            : b,
+        ),
+      );
+    }
+  }, []);
+
+  const autoReconcileAll = useCallback(() => {
+    let matchedCount = 0;
+    const nowTime = Date.now();
+
+    setAllBankStatements((prevStatements) => {
+      const updatedStatements = [...prevStatements];
+
+      setAllBills((prevBills) => {
+        const updatedBills = [...prevBills];
+
+        updatedStatements.forEach((stmt) => {
+          if (stmt.conciliated) return;
+
+          const matchIndex = updatedBills.findIndex((b) => {
+            if (b.conciliationStatus === "conciliado") return false;
+            const stmtVal = Math.abs(stmt.amount);
+            const billVal = b.paidAmount || b.amount;
+            const valDiff = Math.abs(stmtVal - billVal);
+            return valDiff < 0.05;
+          });
+
+          if (matchIndex !== -1) {
+            stmt.conciliated = true;
+            stmt.matchedBillId = updatedBills[matchIndex].id;
+            updatedBills[matchIndex] = {
+              ...updatedBills[matchIndex],
+              status: "pago",
+              paidAt: updatedBills[matchIndex].paidAt || stmt.date,
+              paidAmount: updatedBills[matchIndex].paidAmount || Math.abs(stmt.amount),
+              conciliationStatus: "conciliado",
+              conciliatedAt: nowTime,
+              conciliationRef: stmt.documentNumber || stmt.fitId,
+            };
+            matchedCount++;
+          }
+        });
+
+        return updatedBills;
+      });
+
+      return updatedStatements;
+    });
+
+    return {
+      matchedCount,
+      message: `${matchedCount} lançamentos conciliados com sucesso com o extrato bancário.`,
+    };
+  }, []);
+
+  const resetBillsToDefault = useCallback(() => {
+    setAllBills(INITIAL_BILLS.map((b) => ({ ...b, loja_id: currentLojaId || "loja-1" })));
+    setAllBankStatements(
+      INITIAL_BANK_STATEMENTS.map((s) => ({ ...s, loja_id: currentLojaId || "loja-1" })),
+    );
+  }, [currentLojaId]);
+
+  // --- MÉTODOS DE CLIENTES & CRM ---
+  const addCustomer = useCallback(
+    (input: NewCustomerInput): Customer => {
+      const t = Date.now();
+      const targetLojaId = input.loja_id || currentLojaId || "loja-1";
+
+      let birthDay: number | undefined;
+      let birthMonth: number | undefined;
+      if (input.birthdate) {
+        const parts = input.birthdate.split("-");
+        if (parts.length >= 2) {
+          birthMonth = parseInt(parts[parts.length - 2], 10);
+          birthDay = parseInt(parts[parts.length - 1], 10);
+        }
+      }
+
+      const newCustomer: Customer = {
+        id: uid("cust"),
+        loja_id: targetLojaId,
+        name: input.name.trim(),
+        phone: input.phone.trim(),
+        email: input.email?.trim() || undefined,
+        document: input.document?.trim() || undefined,
+        birthdate: input.birthdate || undefined,
+        birthDay,
+        birthMonth,
+        address: input.address,
+        status: input.status || "padrao",
+        tags: input.tags && input.tags.length > 0 ? input.tags : ["Novo Cliente"],
+        notes: input.notes?.trim() || undefined,
+        preferences: {
+          tableLocation: input.preferences?.tableLocation || undefined,
+          dietaryRestrictions: input.preferences?.dietaryRestrictions || [],
+          favoriteDrinks: input.preferences?.favoriteDrinks || [],
+          favoriteDishes: input.preferences?.favoriteDishes || [],
+          cookingPreference: input.preferences?.cookingPreference || undefined,
+          preferredPayment: input.preferences?.preferredPayment || undefined,
+        },
+        metrics: {
+          totalVisits: 0,
+          totalSpent: 0,
+          averageTicket: 0,
+          maxTicket: 0,
+          visitFrequency: "Primeira Visita",
+        },
+        topItems: [],
+        topCategories: [],
+        visits: [],
+        createdAt: t,
+        updatedAt: t,
+      };
+
+      setAllCustomers((prev) => [newCustomer, ...prev]);
+      return newCustomer;
+    },
+    [currentLojaId],
+  );
+
+  const updateCustomer = useCallback((id: string, data: Partial<Customer>) => {
+    const t = Date.now();
+    setAllCustomers((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        let birthDay = c.birthDay;
+        let birthMonth = c.birthMonth;
+        if (data.birthdate && data.birthdate !== c.birthdate) {
+          const parts = data.birthdate.split("-");
+          if (parts.length >= 2) {
+            birthMonth = parseInt(parts[parts.length - 2], 10);
+            birthDay = parseInt(parts[parts.length - 1], 10);
+          }
+        }
+        return {
+          ...c,
+          ...data,
+          birthDay: birthDay !== undefined ? birthDay : c.birthDay,
+          birthMonth: birthMonth !== undefined ? birthMonth : c.birthMonth,
+          updatedAt: t,
+        };
+      }),
+    );
+  }, []);
+
+  const deleteCustomer = useCallback((id: string): { success: boolean; message?: string } => {
+    setAllCustomers((prev) => prev.filter((c) => c.id !== id));
+    return { success: true, message: "Cliente excluído do CRM com sucesso." };
+  }, []);
+
+  const recordCustomerVisit = useCallback((customerId: string, visit: NewCustomerVisitInput) => {
+    const t = visit.date || Date.now();
+    const visitItem: CustomerVisit = {
+      id: uid("vst"),
+      orderId: visit.orderId,
+      orderCode: visit.orderCode,
+      table: visit.table,
+      date: t,
+      amount: visit.amount,
+      guests: visit.guests,
+      itemsSummary: visit.itemsSummary,
+      paymentMethod: visit.paymentMethod,
+      waiter: visit.waiter,
+      notes: visit.notes,
+    };
+
+    setAllCustomers((prev) =>
+      prev.map((c) => {
+        if (c.id !== customerId) return c;
+        const updatedVisits = [visitItem, ...c.visits];
+        const newMetrics = calculateCustomerMetrics(updatedVisits);
+
+        let updatedStatus = c.status;
+        const updatedTags = [...c.tags];
+        if (newMetrics.totalVisits >= 10 || newMetrics.totalSpent >= 3000) {
+          updatedStatus = "vip";
+          if (!updatedTags.includes("VIP")) updatedTags.push("VIP");
+        } else if (newMetrics.totalVisits >= 4 || newMetrics.totalSpent >= 1000) {
+          if (updatedStatus !== "vip") updatedStatus = "frequente";
+          if (!updatedTags.includes("Frequente")) updatedTags.push("Frequente");
+        }
+
+        return {
+          ...c,
+          status: updatedStatus,
+          tags: updatedTags,
+          metrics: newMetrics,
+          visits: updatedVisits,
+          updatedAt: t,
+        };
+      }),
+    );
+  }, []);
+
+  const findCustomerByPhoneOrName = useCallback(
+    (query: string): Customer | undefined => {
+      const clean = query.trim().toLowerCase();
+      const cleanDigits = query.replace(/\D/g, "");
+      if (!clean) return undefined;
+
+      return allCustomers.find((c) => {
+        if (
+          cleanDigits &&
+          cleanDigits.length >= 8 &&
+          c.phone.replace(/\D/g, "").includes(cleanDigits)
+        ) {
+          return true;
+        }
+        if (c.name.toLowerCase().includes(clean)) return true;
+        if (c.document && c.document.replace(/\D/g, "").includes(cleanDigits)) return true;
+        return false;
+      });
+    },
+    [allCustomers],
+  );
+
+  const resetCustomersToDefault = useCallback(() => {
+    const t = Date.now();
+    const fresh = buildSeedCustomers(t);
+    setAllCustomers(fresh);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("keepserv_customers_v1", JSON.stringify(fresh));
+      } catch (e) {
+        console.error("Erro ao resetar clientes", e);
+      }
+    }
+  }, []);
+
   const value = useMemo<KeepServContext>(
     () => ({
       session,
@@ -1706,6 +2384,28 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       deleteStockItem,
       adjustStockItem,
       resetStockToDefault,
+
+      bills,
+      allBills,
+      bankAccounts: BANK_ACCOUNTS,
+      bankStatements,
+      addBill,
+      updateBill,
+      deleteBill,
+      payBill,
+      reconcileBill,
+      reconcileStatementItem,
+      autoReconcileAll,
+      resetBillsToDefault,
+
+      customers,
+      allCustomers,
+      addCustomer,
+      updateCustomer,
+      deleteCustomer,
+      recordCustomerVisit,
+      findCustomerByPhoneOrName,
+      resetCustomersToDefault,
     }),
     [
       session,
@@ -1762,6 +2462,27 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       deleteStockItem,
       adjustStockItem,
       resetStockToDefault,
+
+      bills,
+      allBills,
+      bankStatements,
+      addBill,
+      updateBill,
+      deleteBill,
+      payBill,
+      reconcileBill,
+      reconcileStatementItem,
+      autoReconcileAll,
+      resetBillsToDefault,
+
+      customers,
+      allCustomers,
+      addCustomer,
+      updateCustomer,
+      deleteCustomer,
+      recordCustomerVisit,
+      findCustomerByPhoneOrName,
+      resetCustomersToDefault,
     ],
   );
 

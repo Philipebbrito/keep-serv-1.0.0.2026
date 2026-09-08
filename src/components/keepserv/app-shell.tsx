@@ -361,19 +361,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             )}
           </Link>
-
-          {/* Botão de colapso no Desktop */}
-          {!collapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleCollapse}
-              className="hidden lg:flex size-8 text-muted-foreground hover:text-foreground"
-              title="Recolher menu lateral (Ctrl+B)"
-            >
-              <PanelLeftClose className="size-4" />
-            </Button>
-          )}
         </div>
 
         {/* Card do Estabelecimento (Tenant Ativo) */}
@@ -529,7 +516,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      {/* Rodapé da Sidebar: Perfil do Usuário & Logout */}
+      {/* Rodapé da Sidebar: Perfil do Usuário */}
       <div className="border-t border-border/80 p-3 space-y-2 bg-card/60">
         {/* Card do Usuário */}
         {collapsed ? (
@@ -577,77 +564,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                logout();
-                navigate({ to: "/" });
-              }}
-              title="Sair da conta"
-            >
-              <LogOut className="size-4" />
-            </Button>
+           
           </div>
         )}
 
-        {/* Botão de colapso/expansão no rodapé */}
-        <div className="hidden lg:flex items-center justify-between pt-1">
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapse}
-                  className="size-9 mx-auto text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>
-                Expandir menu lateral (Ctrl+B)
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              type="button"
-              onClick={toggleCollapse}
-              className="flex items-center justify-between w-full px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/60 transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <ChevronLeft className="size-3.5" />
-                <span>Recolher menu lateral</span>
-              </span>
-              <kbd className="font-mono text-[9px] bg-background border border-border px-1 rounded text-muted-foreground">
-                Ctrl+B
-              </kbd>
-            </button>
-          )}
-        </div>
+        
 
         {/* No modo colapsado, botão de logout individual */}
-        {collapsed && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-9 mx-auto text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex"
-                onClick={() => {
-                  logout();
-                  navigate({ to: "/" });
-                }}
-              >
-                <LogOut className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>
-              Sair da conta
-            </TooltipContent>
-          </Tooltip>
-        )}
+        
       </div>
     </div>
   );

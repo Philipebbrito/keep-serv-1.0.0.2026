@@ -270,7 +270,7 @@ function LoginPage() {
 
         <div className="flex items-center justify-between text-xs text-primary-foreground/60">
           <p>KEEPSERVAPP ®</p>
-          <span className="font-mono">Versão 2.5</span>
+          <span className="font-mono">Versão 1.0</span>
         </div>
       </aside>
 

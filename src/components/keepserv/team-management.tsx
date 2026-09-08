@@ -187,6 +187,12 @@ export function TeamManagement() {
       toast.error("Informe um nome de usuário para login.");
       return;
     }
+    if (!newEmail.trim() || !newEmail.includes("@")) {
+      toast.error(
+        "Informe um e-mail válido para o colaborador (obrigatório para recuperação de senha).",
+      );
+      return;
+    }
     if (!newPhone.trim()) {
       toast.error("Informe o telefone ou WhatsApp de contato.");
       return;
@@ -211,7 +217,7 @@ export function TeamManagement() {
       name: newName,
       usuario: cleanUser,
       username: cleanUser,
-      email: newEmail.trim() || undefined,
+      email: newEmail.trim().toLowerCase(),
       phone: newPhone,
       role: newRole,
       password: newPassword,
@@ -276,6 +282,12 @@ export function TeamManagement() {
       toast.error("Informe o nome de usuário.");
       return;
     }
+    if (!editEmail.trim() || !editEmail.includes("@")) {
+      toast.error(
+        "Informe um e-mail válido para o colaborador (obrigatório para recuperação de senha).",
+      );
+      return;
+    }
     if (!editPhone.trim()) {
       toast.error("Informe o telefone.");
       return;
@@ -297,7 +309,7 @@ export function TeamManagement() {
       name: editName,
       usuario: cleanUser,
       username: cleanUser,
-      email: editEmail.trim(),
+      email: editEmail.trim().toLowerCase(),
       phone: editPhone,
       role: editRole,
     });
@@ -763,20 +775,32 @@ export function TeamManagement() {
               </div>
             </div>
 
-            {/* E-mail de Contato (Opcional) */}
+            {/* E-mail para Recuperação de Senha */}
             <div className="space-y-1.5">
-              <Label htmlFor="add-email" className="text-xs font-semibold">
-                E-mail{" "}
-                <span className="text-muted-foreground text-[10px] font-normal">(Opcional)</span>
-              </Label>
-              <Input
-                id="add-email"
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="Ex: carlos@email.com"
-                className="h-9.5 rounded-xl text-xs sm:text-sm font-mono"
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="add-email" className="text-xs font-semibold">
+                  E-mail do Colaborador <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  recuperação de senha
+                </span>
+              </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  id="add-email"
+                  type="email"
+                  required
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="Ex: carlos.silva@email.com"
+                  className="h-9.5 pl-9 rounded-xl text-xs sm:text-sm font-mono"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                O e-mail é obrigatório para recuperação de senha. O login no sistema continua sendo
+                feito com o nome de usuário.
+              </p>
             </div>
 
             {/* Telefone / WhatsApp */}
@@ -1129,20 +1153,31 @@ export function TeamManagement() {
                 </div>
               </div>
 
-              {/* E-mail de Contato */}
+              {/* E-mail para Recuperação de Senha */}
               <div className="space-y-1.5">
-                <Label htmlFor="edit-email" className="text-xs font-semibold">
-                  E-mail{" "}
-                  <span className="text-muted-foreground text-[10px] font-normal">(Opcional)</span>
-                </Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  className="h-9.5 rounded-xl text-xs sm:text-sm font-mono"
-                  placeholder="Ex: colaborador@email.com"
-                />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-email" className="text-xs font-semibold">
+                    E-mail do Colaborador <span className="text-destructive">*</span>
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    recuperação de senha
+                  </span>
+                </div>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    required
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="h-9.5 pl-9 rounded-xl text-xs sm:text-sm font-mono"
+                    placeholder="Ex: colaborador@email.com"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Necessário para recuperação de acesso pelo botão na tela de login.
+                </p>
               </div>
 
               <div className="space-y-1.5">

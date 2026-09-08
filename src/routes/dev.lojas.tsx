@@ -231,6 +231,13 @@ function DevLojasPage() {
       return;
     }
 
+    if (!gestorEmail.trim() || !gestorEmail.includes("@")) {
+      toast.error(
+        "Informe um e-mail válido para o gestor (obrigatório para recuperação de senha).",
+      );
+      return;
+    }
+
     const res = createLoja(
       {
         nome_fantasia: nomeFantasia,
@@ -393,6 +400,13 @@ function DevLojasPage() {
 
     // 2. Atualizar ou Vincular dados do Gestor
     if (editingGestor) {
+      if (!editGestorEmail.trim() || !editGestorEmail.includes("@")) {
+        toast.error(
+          "Informe um e-mail válido para o gestor (obrigatório para recuperação de senha).",
+        );
+        return;
+      }
+
       updateUser(editingGestor.id, {
         nome: cleanGestorNome || editingGestor.nome,
         name: cleanGestorNome || editingGestor.name,
@@ -751,16 +765,30 @@ function DevLojasPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="gestorEmail" className="text-xs font-semibold">
-                    E-mail de Contato (Opcional)
-                  </Label>
-                  <Input
-                    id="gestorEmail"
-                    type="email"
-                    placeholder="Ex: carlos@restaurante.com (opcional)"
-                    value={gestorEmail}
-                    onChange={(e) => setGestorEmail(e.target.value)}
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="gestorEmail" className="text-xs font-semibold">
+                      E-mail do Gestor <span className="text-destructive">*</span>
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      recuperação de senha
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="gestorEmail"
+                      type="email"
+                      required
+                      placeholder="Ex: carlos.gestor@restaurante.com.br"
+                      value={gestorEmail}
+                      onChange={(e) => setGestorEmail(e.target.value)}
+                      className="pl-9 text-xs sm:text-sm"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Obrigatório para redefinição e recuperação de senha. O login no sistema continua
+                    sendo realizado pelo nome de usuário.
+                  </p>
                 </div>
               </div>
 
@@ -1170,17 +1198,29 @@ function DevLojasPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="editGestorEmail" className="text-xs font-medium">
-                      E-mail de Contato
-                    </Label>
-                    <Input
-                      id="editGestorEmail"
-                      type="email"
-                      value={editGestorEmail}
-                      onChange={(e) => setEditGestorEmail(e.target.value)}
-                      placeholder="carlos@bardaoalemao.com.br"
-                      className="text-sm"
-                    />
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="editGestorEmail" className="text-xs font-medium">
+                        E-mail do Gestor <span className="text-destructive">*</span>
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        recuperação de senha
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Mail className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="editGestorEmail"
+                        type="email"
+                        required
+                        value={editGestorEmail}
+                        onChange={(e) => setEditGestorEmail(e.target.value)}
+                        placeholder="carlos@bardaoalemao.com.br"
+                        className="pl-8 text-sm"
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Necessário para recuperação de senha pelo botão na tela de login.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">

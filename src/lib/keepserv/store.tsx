@@ -68,7 +68,7 @@ export interface NewGestorInput {
   nome: string;
   usuario: string; // Nome de usuário para login
   senha: string;
-  email?: string;
+  email: string; // Obrigatório para recuperação de senha
   phone?: string;
 }
 
@@ -78,7 +78,7 @@ export interface NewUserInput {
   name: string;
   usuario?: string;
   username?: string;
-  email?: string;
+  email: string; // Obrigatório para recuperação de senha
   phone: string;
   role: Role; // Função operacional: garcom, cozinha, caixa, gestor
   password?: string;
@@ -636,9 +636,7 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
       )
         .trim()
         .toLowerCase();
-      const cleanGestorEmail =
-        gestorInput.email?.trim().toLowerCase() ||
-        `${cleanGestorUsuario}@${cleanCodigo.toLowerCase()}.keepserv.app`;
+      const cleanGestorEmail = gestorInput.email?.trim().toLowerCase() || "";
       const cleanGestorSenha = gestorInput.senha.trim();
 
       if (!cleanNome) {
@@ -669,6 +667,13 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         return {
           success: false,
           message: "O nome de usuário do Gestor deve conter pelo menos 3 caracteres alfanuméricos.",
+        };
+      }
+
+      if (!cleanGestorEmail || !cleanGestorEmail.includes("@")) {
+        return {
+          success: false,
+          message: "O e-mail do Gestor é obrigatório para possibilitar a recuperação de senha.",
         };
       }
 
@@ -1035,9 +1040,13 @@ export function KeepServProvider({ children }: { children: ReactNode }) {
         .trim()
         .toLowerCase();
       const cleanUsuario = rawUsuario || `user.${Date.now()}`;
-      const cleanEmail =
-        input.email?.trim().toLowerCase() ||
-        `${cleanUsuario}@${targetLojaId || "loja"}.keepserv.app`;
+      const rawEmail = input.email?.trim().toLowerCase() || "";
+      if (!rawEmail || !rawEmail.includes("@")) {
+        throw new Error(
+          "O e-mail do colaborador é obrigatório para possibilitar a recuperação de senha.",
+        );
+      }
+      const cleanEmail = rawEmail;
 
       const newUser: UserAccount = {
         id: `usr-${Date.now()}-${Math.floor(Math.random() * 1000)}`,

@@ -40,7 +40,15 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { DigitalMenuView } from "./digital-menu-view";
 import { useOrders } from "@/state";
-import { orderTotal, type MenuItem, type Order, type OrderItem, type OrderStatus } from "@/domain";
+import {
+  orderTotal,
+  TABLE_REASON_LABEL,
+  type MenuItem,
+  type Order,
+  type OrderItem,
+  type OrderStatus,
+  type TableStatusReason,
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -60,7 +68,7 @@ interface CustomerBillViewProps {
 }
 
 export function CustomerBillView({ orderId }: CustomerBillViewProps) {
-  const { orders, now, sendCustomerMessage, setCustomerInfo, createOrder } = useOrders();
+  const { orders, tables, now, sendCustomerMessage, setCustomerInfo, createOrder } = useOrders();
 
   // Detecta se a rota ou parâmetro corresponde a uma mesa fixa (ex: "4", "mesa-4", etc.)
   const detectedTableNumber = useMemo(() => {
@@ -73,6 +81,12 @@ export function CustomerBillView({ orderId }: CustomerBillViewProps) {
     }
     return null;
   }, [orderId]);
+
+  // Informações da mesa no salão (ativa ou pausada temporariamente)
+  const tableData = useMemo(() => {
+    if (detectedTableNumber === null) return null;
+    return tables.find((t) => t.id === detectedTableNumber) || null;
+  }, [tables, detectedTableNumber]);
 
   // Localiza a comanda pelo ID, código (#1041 ou 1041) ou número de mesa ativa
   const order = useMemo(() => {
@@ -367,6 +381,23 @@ export function CustomerBillView({ orderId }: CustomerBillViewProps) {
 
         {/* Conteúdo Principal */}
         <main className="max-w-4xl mx-auto px-3 sm:px-4 pt-4 space-y-4">
+          {/* Alerta caso a mesa esteja pausada no salão */}
+          {tableData && !tableData.active && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3.5 sm:p-4 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
+              <AlertCircle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-bold text-sm">Mesa temporariamente fora de operação</div>
+                <p className="text-muted-foreground dark:text-amber-300/80 leading-relaxed">
+                  Esta mesa está marcada no sistema como indisponível para novos atendimentos
+                  {tableData.statusReason
+                    ? ` (Motivo: ${TABLE_REASON_LABEL[tableData.statusReason as TableStatusReason] || tableData.statusReason})`
+                    : ""}
+                  . Se você foi acomodado aqui pela equipe, avise o garçom para reativar a mesa.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Card de Identificação Opcional do Cliente */}
           <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-start gap-3">

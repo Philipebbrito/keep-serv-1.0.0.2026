@@ -19,8 +19,10 @@ import {
   CATEGORY_LABEL,
   CATEGORY_ORDER,
   getProductStockStatus,
+  TABLE_REASON_LABEL,
   type MenuItem,
   type OrderItem,
+  type TableStatusReason,
 } from "@/domain";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +36,7 @@ interface DraftItem {
 }
 
 export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { createOrder } = useOrders();
+  const { createOrder, tables, toggleTableStatus } = useOrders();
   const { products } = useMenu();
   const { stockItems } = useStock();
   const [table, setTable] = useState<string>("");
@@ -191,6 +193,65 @@ export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () =
                 />
               </div>
             </div>
+
+            {/* Seletor rápido de mesas */}
+            <div className="mt-2.5">
+              <span className="text-[11px] text-muted-foreground block mb-1 font-medium">
+                Mesas no salão:
+              </span>
+              <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pr-1">
+                {tables.map((t) => {
+                  const isSelected = table === String(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTable(String(t.id))}
+                      className={cn(
+                        "size-7 rounded-md text-xs font-semibold transition-all shrink-0",
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/40"
+                          : !t.active
+                            ? "border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : "border border-border bg-card text-foreground hover:bg-muted",
+                      )}
+                      title={!t.active ? `Mesa ${t.id} (Pausada da operação)` : `Mesa ${t.id}`}
+                    >
+                      {t.id}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Aviso se a mesa selecionada estiver inativa */}
+            {(() => {
+              const currentTableNum = parseInt(table, 10);
+              const foundTable = tables.find((t) => t.id === currentTableNum);
+              if (foundTable && !foundTable.active) {
+                const reason = foundTable.statusReason
+                  ? TABLE_REASON_LABEL[foundTable.statusReason as TableStatusReason] ||
+                    foundTable.statusReason
+                  : "Em Manutenção";
+                return (
+                  <div className="mt-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2">
+                    <div>
+                      <strong>Mesa {foundTable.id} está fora de operação</strong> ({reason}).
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-[11px] border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200"
+                      onClick={() => toggleTableStatus(foundTable.id)}
+                    >
+                      Reativar Mesa
+                    </Button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             <h3 className="mt-6 text-xs font-bold tracking-wider text-muted-foreground uppercase">
               Cardápio

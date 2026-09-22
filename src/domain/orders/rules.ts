@@ -106,3 +106,35 @@ export function validarNovoPedido(input: NewOrderInput): { valid: boolean; error
     errors,
   };
 }
+
+/**
+ * Cria a lista inicial de mesas ativas para uma loja.
+ */
+export function createInitialTables(
+  count: number = 24,
+  lojaId: string = "loja-1",
+): import("./types").DiningTable[] {
+  return Array.from({ length: Math.max(1, count) }, (_, i) => ({
+    id: i + 1,
+    loja_id: lojaId,
+    label: `Mesa ${i + 1}`,
+    active: true,
+  }));
+}
+
+/**
+ * Verifica se uma mesa pode ser excluída do salão sem violar comandas abertas.
+ */
+export function canSafelyRemoveTable(
+  tableId: number,
+  orders: Order[],
+): { allowed: boolean; reason?: string } {
+  const activeOrder = orders.find((o) => o.table === tableId && o.status !== "pago");
+  if (activeOrder) {
+    return {
+      allowed: false,
+      reason: `A Mesa ${tableId} possui comanda aberta (#${activeOrder.code}) em andamento. Feche ou cancele o atendimento antes de removê-la.`,
+    };
+  }
+  return { allowed: true };
+}

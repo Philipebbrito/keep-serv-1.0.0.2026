@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TABLES_TOTAL } from "@/domain";
+import { useOrders } from "@/state";
 
 interface FixedTableQRDialogProps {
   open: boolean;
@@ -21,11 +21,19 @@ interface FixedTableQRDialogProps {
 }
 
 export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTableQRDialogProps) {
+  const { tables } = useOrders();
   const [selectedTable, setSelectedTable] = useState<number>(initialTable);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [allQrs, setAllQrs] = useState<Record<number, string>>({});
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"single" | "all">("single");
+
+  // Garante que a mesa selecionada existe nas mesas atuais
+  useEffect(() => {
+    if (tables.length > 0 && !tables.some((t) => t.id === selectedTable)) {
+      setSelectedTable(tables[0].id);
+    }
+  }, [tables, selectedTable]);
 
   useEffect(() => {
     if (initialTable) {
@@ -65,24 +73,24 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
 
     const generateAll = async () => {
       const results: Record<number, string> = {};
-      for (let t = 1; t <= TABLES_TOTAL; t++) {
+      for (const t of tables) {
         try {
-          const url = await QRCode.toDataURL(getTableUrl(t), {
+          const url = await QRCode.toDataURL(getTableUrl(t.id), {
             width: 260,
             margin: 1.5,
             color: { dark: "#09090b", light: "#ffffff" },
             errorCorrectionLevel: "M",
           });
-          results[t] = url;
+          results[t.id] = url;
         } catch (e) {
-          console.error("Erro ao gerar QR da mesa", t, e);
+          console.error("Erro ao gerar QR da mesa", t.id, e);
         }
       }
       setAllQrs(results);
     };
 
     generateAll();
-  }, [open, mode]);
+  }, [open, mode, tables]);
 
   const handleCopyLink = async () => {
     try {
@@ -150,7 +158,7 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Todas (1 a {TABLES_TOTAL})
+                Todas ({tables.length} mesas)
               </button>
             </div>
           </div>
@@ -166,18 +174,21 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
                   Selecionar mesa:
                 </span>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: TABLES_TOTAL }, (_, i) => i + 1).map((t) => (
+                  {tables.map((t) => (
                     <button
-                      key={t}
+                      key={t.id}
                       type="button"
-                      onClick={() => setSelectedTable(t)}
+                      onClick={() => setSelectedTable(t.id)}
                       className={`size-7 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                        selectedTable === t
+                        selectedTable === t.id
                           ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                          : "border border-border bg-card text-muted-foreground hover:bg-muted"
+                          : !t.active
+                            ? "border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                            : "border border-border bg-card text-muted-foreground hover:bg-muted"
                       }`}
+                      title={!t.active ? `Mesa ${t.id} (Pausada da operação)` : `Mesa ${t.id}`}
                     >
-                      {t}
+                      {t.id}
                     </button>
                   ))}
                 </div>
@@ -257,29 +268,38 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-foreground">
-                    Grade de Displays para todas as 24 Mesas
+                    Grade de Displays para todas as {tables.length} Mesas
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     Pronto para imprimir e recortar nos totens ou suportes acrílicos de mesa.
                   </p>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {TABLES_TOTAL} mesas
+                  {tables.length} mesas
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {Array.from({ length: TABLES_TOTAL }, (_, i) => i + 1).map((t) => (
+                {tables.map((t) => (
                   <div
-                    key={t}
-                    className="rounded-xl border border-border bg-card p-3 text-center flex flex-col items-center"
+                    key={t.id}
+                    className={`rounded-xl border p-3 text-center flex flex-col items-center ${
+                      !t.active ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-card"
+                    }`}
                   >
-                    <span className="text-xs font-bold text-foreground mb-1">MESA {t}</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs font-bold text-foreground">MESA {t.id}</span>
+                      {!t.active && (
+                        <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                          Pausada
+                        </span>
+                      )}
+                    </div>
                     <div className="bg-white p-1.5 rounded-lg border border-zinc-200">
-                      {allQrs[t] ? (
+                      {allQrs[t.id] ? (
                         <img
-                          src={allQrs[t]}
-                          alt={`QR Mesa ${t}`}
+                          src={allQrs[t.id]}
+                          alt={`QR Mesa ${t.id}`}
                           className="size-24 object-contain"
                         />
                       ) : (
@@ -289,7 +309,7 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
                       )}
                     </div>
                     <span className="text-[9px] text-muted-foreground mt-1.5 font-mono">
-                      /mesa/{t}
+                      /mesa/{t.id}
                     </span>
                   </div>
                 ))}
@@ -363,24 +383,24 @@ export function FixedTableQRDialog({ open, onClose, initialTable = 1 }: FixedTab
             </div>
           ) : (
             <div className="p-4 grid grid-cols-2 gap-6">
-              {Array.from({ length: TABLES_TOTAL }, (_, i) => i + 1).map((t) => (
+              {tables.map((t) => (
                 <div
-                  key={t}
+                  key={t.id}
                   className="border-2 border-dashed border-black p-4 text-center rounded-xl break-inside-avoid"
                 >
                   <h3 className="text-xs font-bold uppercase tracking-wider">KEEPSERV</h3>
                   <div className="text-xl font-black my-1 bg-black text-white py-1 px-3 rounded inline-block">
-                    MESA {t}
+                    MESA {t.id}
                   </div>
                   <p className="text-[10px] font-semibold mb-2">Cardápio Digital & Comanda</p>
-                  {allQrs[t] && (
+                  {allQrs[t.id] && (
                     <img
-                      src={allQrs[t]}
-                      alt={`QR Mesa ${t}`}
+                      src={allQrs[t.id]}
+                      alt={`QR Mesa ${t.id}`}
                       className="w-36 h-36 mx-auto border border-black p-1 rounded"
                     />
                   )}
-                  <p className="text-[9px] mt-2 font-mono">{getTableUrl(t)}</p>
+                  <p className="text-[9px] mt-2 font-mono">{getTableUrl(t.id)}</p>
                 </div>
               ))}
             </div>

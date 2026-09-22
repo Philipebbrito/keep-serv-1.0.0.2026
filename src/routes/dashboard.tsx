@@ -44,12 +44,13 @@ import { OrderDialog } from "@/components/keepserv/order-dialog";
 import { PaymentDialog } from "@/components/keepserv/payment-dialog";
 import { TeamManagement } from "@/components/keepserv/team-management";
 import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard";
+import { TableManagementDialog } from "@/components/keepserv/table-management-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AVG_TIME_BY_STATION, ORDERS_BY_HOUR, TOP_PRODUCTS } from "@/data";
 import { useAuth, useMenu, useOrders, useStock } from "@/state";
-import { orderTotal, STATUS_LABEL, TABLES_TOTAL, urgencyFor, type Order } from "@/domain";
+import { orderTotal, STATUS_LABEL, urgencyFor, type Order } from "@/domain";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -149,7 +150,8 @@ const tooltipStyle = {
 };
 
 function DashboardPage() {
-  const { orders, now, requestCleanup, completeCleanup, printBill } = useOrders();
+  const { orders, tables, activeTables, now, requestCleanup, completeCleanup, printBill } =
+    useOrders();
   const { session, users } = useAuth();
   const { products } = useMenu();
   const { stockItems } = useStock();
@@ -157,6 +159,7 @@ function DashboardPage() {
   const [managerView, setManagerView] = useState<"gestor" | "garcom">(
     isWaiter ? "garcom" : "gestor",
   );
+  const [tableManagerOpen, setTableManagerOpen] = useState(false);
   const routerLocation = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
 
@@ -285,15 +288,30 @@ function DashboardPage() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 text-xs h-9 shadow-2xs"
-          onClick={() => setManagerView("garcom")}
-        >
-          <UserCheck className="size-4 text-primary" />
-          <span>Visão do Garçom</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-xs h-9 shadow-2xs border-primary/30 text-primary hover:bg-primary/5"
+            onClick={() => setTableManagerOpen(true)}
+            title="Alterar quantidade de mesas ou pausar/reativar mesas na operação"
+          >
+            <Table2 className="size-4" />
+            <span>
+              Gerenciar Mesas ({activeTables.length}/{tables.length})
+            </span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-xs h-9 shadow-2xs"
+            onClick={() => setManagerView("garcom")}
+          >
+            <UserCheck className="size-4 text-primary" />
+            <span>Visão do Garçom</span>
+          </Button>
+        </div>
       </div>
 
       {/* Conteúdo da Seção Ativa */}
@@ -315,8 +333,8 @@ function DashboardPage() {
             <Kpi
               icon={Table2}
               label="Mesas ocupadas"
-              value={`${occupiedTables}/${TABLES_TOTAL}`}
-              hint={`${Math.round((occupiedTables / TABLES_TOTAL) * 100)}% de ocupação do salão`}
+              value={`${occupiedTables}/${activeTables.length}`}
+              hint={`${Math.round((occupiedTables / Math.max(1, activeTables.length)) * 100)}% de ocupação (${tables.length} cadastradas)`}
             />
             <Kpi
               icon={AlertTriangle}
@@ -547,6 +565,7 @@ function DashboardPage() {
         }}
       />
       <PaymentDialog order={payOrder} onClose={() => setPayOrder(null)} />
+      <TableManagementDialog open={tableManagerOpen} onOpenChange={setTableManagerOpen} />
     </div>
   );
 }

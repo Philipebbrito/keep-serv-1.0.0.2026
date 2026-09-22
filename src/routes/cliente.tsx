@@ -11,12 +11,13 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DigitalMenuView } from "@/components/keepserv/digital-menu-view";
 import { useOrders } from "@/state";
-import { orderTotal, TABLES_TOTAL } from "@/domain";
+import { orderTotal, TABLE_REASON_LABEL, type TableStatusReason } from "@/domain";
 
 export const Route = createFileRoute("/cliente")({
   head: () => ({
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/cliente")({
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function ClientePage() {
-  const { orders } = useOrders();
+  const { orders, tables, activeTables } = useOrders();
   const navigate = useNavigate();
   const [comandaInput, setComandaInput] = useState("");
   const [activeTab, setActiveTab] = useState<"mesas" | "cardapio">("mesas");
@@ -51,9 +52,17 @@ function ClientePage() {
     const clean = comandaInput.trim().replace("#", "");
     if (!clean) return;
 
-    // Se for apenas número pequeno (1 a 20), pode ser mesa
+    // Se for número de mesa existente
     const num = parseInt(clean, 10);
-    if (!isNaN(num) && num >= 1 && num <= TABLES_TOTAL) {
+    const tableFound = !isNaN(num) ? tables.find((t) => t.id === num) : undefined;
+    if (tableFound) {
+      if (!tableFound.active) {
+        const reasonText = tableFound.statusReason
+          ? TABLE_REASON_LABEL[tableFound.statusReason as TableStatusReason] ||
+            tableFound.statusReason
+          : "Em Manutenção";
+        toast.warning(`A Mesa ${num} está temporariamente fora de operação (${reasonText}).`);
+      }
       navigate({ to: "/mesa/$tableId", params: { tableId: String(num) } });
       return;
     }
@@ -189,39 +198,65 @@ function ClientePage() {
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground font-mono">
-                  {TABLES_TOTAL} mesas disponíveis
+                  {activeTables.length} mesas em operação ({tables.length} no salão)
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {Array.from({ length: TABLES_TOTAL }, (_, i) => i + 1).map((tableNum) => {
-                  const activeOrder = getTableActiveOrder(tableNum);
+                {tables.map((t) => {
+                  const activeOrder = getTableActiveOrder(t.id);
                   const hasActive = !!activeOrder;
 
                   return (
                     <button
-                      key={tableNum}
+                      key={t.id}
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        if (!t.active) {
+                          const reasonText = t.statusReason
+                            ? TABLE_REASON_LABEL[t.statusReason as TableStatusReason] ||
+                              t.statusReason
+                            : "Em Manutenção";
+                          toast.warning(
+                            `A Mesa ${t.id} está temporariamente fora de operação (${reasonText}).`,
+                          );
+                        }
                         navigate({
                           to: "/mesa/$tableId",
-                          params: { tableId: String(tableNum) },
-                        })
-                      }
+                          params: { tableId: String(t.id) },
+                        });
+                      }}
                       className={`group relative flex flex-col items-center justify-between rounded-xl border p-4 text-center transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                        hasActive
-                          ? "border-primary/40 bg-card hover:border-primary shadow-xs"
-                          : "border-border/80 bg-muted/20 hover:border-border hover:bg-card"
+                        !t.active
+                          ? "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50 opacity-85"
+                          : hasActive
+                            ? "border-primary/40 bg-card hover:border-primary shadow-xs"
+                            : "border-border/80 bg-muted/20 hover:border-border hover:bg-card"
                       }`}
                     >
-                      <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base mb-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        {tableNum}
+                      <div
+                        className={`size-10 rounded-xl flex items-center justify-center font-bold text-base mb-2 transition-colors ${
+                          !t.active
+                            ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                            : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                        }`}
+                      >
+                        {t.id}
                       </div>
 
-                      <span className="font-semibold text-xs text-foreground">Mesa {tableNum}</span>
+                      <span className="font-semibold text-xs text-foreground">
+                        {t.label || `Mesa ${t.id}`}
+                      </span>
 
                       <div className="mt-2 w-full">
-                        {hasActive ? (
+                        {!t.active ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] w-full justify-center bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 font-medium"
+                          >
+                            Fora de Operação
+                          </Badge>
+                        ) : hasActive ? (
                           <div className="space-y-1">
                             <Badge
                               variant="outline"

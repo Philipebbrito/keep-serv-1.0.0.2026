@@ -35,6 +35,27 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
 
 export const TABLES_TOTAL = 24;
 
+export type TableStatusReason = "manutencao" | "juntada" | "reservada" | "avaria" | "outro";
+
+export const TABLE_REASON_LABEL: Record<TableStatusReason, string> = {
+  manutencao: "Em Manutenção",
+  juntada: "Juntada a outra mesa",
+  reservada: "Reservada para Evento",
+  avaria: "Avaria / Quebrada",
+  outro: "Outro Motivo",
+};
+
+export interface DiningTable {
+  id: number;
+  loja_id?: string;
+  label?: string;
+  active: boolean; // true = em operação; false = temporariamente fora de operação
+  statusReason?: TableStatusReason | string;
+  customReason?: string;
+  updatedAt?: number;
+  updatedBy?: string;
+}
+
 export interface OrderPaymentInfo {
   method: PaymentMethod;
   amount: number;

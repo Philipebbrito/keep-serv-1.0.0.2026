@@ -36,13 +36,13 @@ import { OrderDialog } from "@/components/keepserv/order-dialog";
 import { PaymentDialog } from "@/components/keepserv/payment-dialog";
 import { QRCodeModal } from "@/components/keepserv/qr-code-modal";
 import { RecentOrdersList } from "@/components/keepserv/recent-orders-list";
+import { TableManagementDialog } from "@/components/keepserv/table-management-dialog";
 import { useAuth, useOrders } from "@/state";
 import {
   elapsedLabel,
   orderTotal,
   PAYMENT_LABEL,
   STATUS_LABEL,
-  TABLES_TOTAL,
   urgencyFor,
   type Order,
 } from "@/domain";
@@ -51,9 +51,11 @@ import { cn } from "@/lib/utils";
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function WaiterDashboard() {
-  const { orders, now, moveTo, requestCleanup, completeCleanup, printBill } = useOrders();
+  const { orders, tables, activeTables, now, moveTo, requestCleanup, completeCleanup, printBill } =
+    useOrders();
   const { session } = useAuth();
   const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const [tableManagerOpen, setTableManagerOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [payOrder, setPayOrder] = useState<Order | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
@@ -227,6 +229,17 @@ export function WaiterDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setTableManagerOpen(true)}
+            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary"
+            title="Ajustar quantidade de mesas ou pausar/reativar mesas na operação"
+          >
+            <Table2 className="size-4" />
+            <span>
+              Gerenciar Mesas ({activeTables.length}/{tables.length})
+            </span>
+          </Button>
           <Button
             variant="outline"
             onClick={() => setFixedQrOpen(true)}
@@ -412,10 +425,19 @@ export function WaiterDashboard() {
               {distinctOpenTables} total
             </span>
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Salão com {distinctOpenTables} de {TABLES_TOTAL} mesas ocupadas (
-            {Math.round((distinctOpenTables / TABLES_TOTAL) * 100)}%)
-          </p>
+          <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              {distinctOpenTables} de {activeTables.length} mesas ativas ocupadas (
+              {Math.round((distinctOpenTables / Math.max(1, activeTables.length)) * 100)}%)
+            </span>
+            <button
+              type="button"
+              onClick={() => setTableManagerOpen(true)}
+              className="text-primary hover:underline text-[11px] font-medium"
+            >
+              Configurar mesas
+            </button>
+          </div>
 
           <div className="mt-3 pt-2.5 border-t border-border/50 flex flex-wrap items-center gap-1.5">
             {cleanupOrders.length > 0 ? (
@@ -876,6 +898,7 @@ export function WaiterDashboard() {
       />
       <QRCodeModal order={qrOrder} onClose={() => setQrOrder(null)} />
       <FixedTableQRDialog open={fixedQrOpen} onClose={() => setFixedQrOpen(false)} />
+      <TableManagementDialog open={tableManagerOpen} onOpenChange={setTableManagerOpen} />
     </div>
   );
 }

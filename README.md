@@ -1,3 +1,7 @@
+<img width="1568" height="743" alt="image" src="https://github.com/user-attachments/assets/4256396d-194a-4ea7-babe-aad52a5b17d6" />
+<img width="1568" height="748" alt="image" src="https://github.com/user-attachments/assets/d6e39eb2-74e8-4986-9e0c-9e8c6cc2f975" />
+<img width="1568" height="755" alt="image" src="https://github.com/user-attachments/assets/ba76ce0a-aa13-41c9-84b7-dfea05e093c9" />
+
 # KeepServ 🍽️
 
 > Plataforma web para gestão operacional e financeira de bares e restaurantes: quadro de pedidos em Kanban, controle de mesas, caixa, cardápio digital com QR Code, estoque, contas a pagar/receber, CRM de clientes e gestão de equipe — tudo em uma interface multi-perfil e multi-loja.

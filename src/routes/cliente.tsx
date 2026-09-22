@@ -146,8 +146,8 @@ function ClientePage() {
                   Seja bem-vindo ao KeepServ!
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Selecione sua mesa abaixo ou digite o código da sua comanda para acompanhar seus
-                  pedidos em tempo real, chamar o garçom ou pagar via Pix.
+                  Selecione a mesa abaixo ou digite o código da sua comanda para acompanhar os
+                  pedidos em tempo real, ou pagar via Pix.
                 </p>
 
                 {/* Busca rápida de comanda */}
@@ -229,9 +229,6 @@ function ClientePage() {
                             >
                               Comanda Aberta
                             </Badge>
-                            <p className="text-[11px] font-mono font-bold text-primary">
-                              {brl(orderTotal(activeOrder))}
-                            </p>
                           </div>
                         ) : (
                           <Badge
@@ -245,40 +242,6 @@ function ClientePage() {
                     </button>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Informações de apoio */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="rounded-xl border border-border bg-card p-4 text-left">
-                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
-                  <UtensilsCrossed className="size-4" />
-                </div>
-                <h3 className="text-xs font-bold text-foreground">Cardápio Completo</h3>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Fotos, descrições, alergênicos e valores atualizados de todos os pratos e bebidas.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-card p-4 text-left">
-                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
-                  <Clock className="size-4" />
-                </div>
-                <h3 className="text-xs font-bold text-foreground">Status em Tempo Real</h3>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Acompanhe se seu pedido está pendente, na cozinha ou a caminho da sua mesa.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-card p-4 text-left">
-                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-2">
-                  <Users className="size-4" />
-                </div>
-                <h3 className="text-xs font-bold text-foreground">Divisão de Conta & Pix</h3>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Divida o valor por pessoa e pague diretamente no celular sem esperar fila no
-                  caixa.
-                </p>
               </div>
             </div>
           </div>

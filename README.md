@@ -1,196 +1,206 @@
-# KeepServ - Gestão Integrada para Bares e Restaurantes
+# KeepServ 🍽️
 
-> Aplicação _front-end_ para gestão visual de pedidos (Kanban), comunicação entre salão e cozinha, controle de caixa e dashboard de conciliação financeira em bares e restaurantes.
+> Plataforma web para gestão operacional e financeira de bares e restaurantes: quadro de pedidos em Kanban, controle de mesas, caixa, cardápio digital com QR Code, estoque, contas a pagar/receber, CRM de clientes e gestão de equipe — tudo em uma interface multi-perfil e multi-loja.
+
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-blue)
+![Stack](https://img.shields.io/badge/stack-React%2019%20%2B%20TanStack%20Start-informational)
+![Licença](https://img.shields.io/badge/licença-privado-lightgrey)
 
 ---
 
 ## 📋 Sumário
 
-- [Termo de Abertura do Projeto (TAP)](#termo-de-abertura-do-projeto-tap)
-- [Documentação Acadêmica (ABNT)](#documentação-acadêmica-abnt)
-- [Funcionalidades Principais](#funcionalidades-principais)
-- [Interdisciplinaridade](#interdisciplinaridade)
-- [Autores e Equipe](#autores-e-equipe)
+- [Visão geral](#-visão-geral)
+- [Funcionalidades](#-funcionalidades)
+- [Perfis de acesso](#-perfis-de-acesso)
+- [Stack técnica](#-stack-técnica)
+- [Estrutura do projeto](#-estrutura-do-projeto)
+- [Como rodar localmente](#-como-rodar-localmente)
+- [Scripts disponíveis](#-scripts-disponíveis)
+- [Modelo de dados (domínio)](#-modelo-de-dados-domínio)
+- [Persistência de dados](#-persistência-de-dados-mock)
+- [Roadmap / fora do escopo atual](#-roadmap--fora-do-escopo-atual)
+- [Sobre o projeto acadêmico](#-sobre-o-projeto-acadêmico)
 
 ---
 
-# Termo de Abertura do Projeto (TAP)
+## 🧭 Visão geral
 
-**Faculdade CCI**[cite: 1]  
-**Curso:** Análise e Desenvolvimento de Sistemas[cite: 1]  
-**Data:** 01 de Setembro de 2026[cite: 1]
+Muitos bares e restaurantes de pequeno e médio porte ainda dependem de comandas de papel, avisos verbais e planilhas soltas para coordenar salão, cozinha e caixa. Isso gera atrasos, pedidos perdidos e falta de visibilidade financeira para o gestor.
 
-### 1. Identificação
+O **KeepServ** centraliza essa operação em um só lugar, com uma tela pensada para cada função dentro do restaurante — do garçom que só precisa lançar e acompanhar pedidos, até o gestor que precisa enxergar o fluxo de caixa e o desempenho da loja em tempo real.
 
-- **Nome do Projeto:** KeepServ (Keep Serv)[cite: 1]
-- **Grupo Responsável:** Keep Serv[cite: 1]
-- **Professor Responsável:** Sosthenes Carlos Ferreira do Nascimento[cite: 1]
-- **Equipe do Projeto:** Matheus Henrique, Francisco Tauã, Douglas Sales, Philipe Borges[cite: 1]
+## ✨ Funcionalidades
 
-### 2. Disciplinas Vinculadas ao Projeto
+### Operação & Salão
+- **Quadro de pedidos (Kanban)** — pedidos fluem por `Pendente → Em preparo → Pronto → Entregue → Pago`, com alerta visual e contagem de tempo em atraso por SLA.
+- **Gestão de mesas** — mapa de mesas com status (livre, ocupada, reservada, manutenção, avariada) e motivo customizável.
+- **Comandas por mesa** — abertura, itens, observações e mensagens rápidas trocadas entre garçom e cozinha por pedido.
+- **Cardápio com QR Code** — geração de QR Code por mesa para cardápio digital acessível pelo cliente.
+- **Novo pedido / edição de pedido** — inclusão de itens por categoria (prato, entrada, bebida, sobremesa), quantidade e observações, com possibilidade de cancelamento de item.
 
-- Programação para Dispositivos Móveis I[cite: 1]
-- Programação II (POO)[cite: 1]
-- Tópicos Avançados em Análise e Desenvolvimento de Sistemas[cite: 1]
-- Avaliação de Software[cite: 1]
-- Introdução à Rede de Computadores[cite: 1]
+### Caixa & Pagamentos
+- **Caixa & Balcão** — recebimento e fechamento de comandas por mesa.
+- **Múltiplas formas de pagamento** — Dinheiro, Débito, Crédito e Pix, com emissão de comprovante/dialog de impressão.
 
-### 3. Alinhamento Estratégico
+### Cardápio & Estoque
+- **Cardápio & Itens** — cadastro de produtos, categorias, preços e fotos.
+- **Estoque & Insumos** — controle de insumos vinculados aos itens do cardápio, com alertas de nível.
 
-O projeto está alinhado ao foco técnico do semestre em desenvolvimento _Front-end_ (Web/Mobile), permitindo o aprofundamento em usabilidade, arquitetura de componentes e consumo de dados[cite: 1]. Além disso, atende a uma demanda real do mercado de _food service_, que busca soluções mais ágeis e visuais para a gestão de pedidos em bares e restaurantes[cite: 1].
+### Financeiro (Gestor)
+- **Painel Geral** — ocupação de mesas, pedidos em atraso, tempo médio de atendimento, faturamento em aberto, gráficos de pedidos por hora, produtos mais vendidos, tempo médio por etapa e fila atual por etapa.
+- **Fluxo de Caixa** — entradas, saídas, sangrias e suprimentos em tempo real.
+- **Contas a Pagar** — controle de vencimentos e contas em atraso.
+- **Extrato / Livro Caixa** — histórico consolidado de movimentações com filtros.
 
-### 4. Público-Alvo
+### Clientes & Equipe
+- **CRM de Clientes** — cadastro, histórico de consumo e aniversariantes.
+- **Minha Equipe** — gestão de colaboradores, cargos operacionais e níveis de acesso.
 
-Donos e gestores de bares e restaurantes de pequeno e médio porte, além dos garçons/atendentes, operadores de caixa e equipe de cozinha desses estabelecimentos[cite: 1].
+### Multi-loja (multi-tenant)
+- Suporte a múltiplas lojas sob o mesmo sistema, com **código da loja** exigido no login, permitindo isolamento de dados entre estabelecimentos e um nível de acesso `dev` (super admin) para administração das lojas cadastradas.
 
-### 5. Justificativa
+## 👥 Perfis de acesso
 
-Muitos bares e restaurantes ainda enfrentam falhas de comunicação entre salão e cozinha, seja por anotações em papel, comandas verbais ou uso de sistemas que não priorizam a visualização rápida do status dos pedidos[cite: 1]. Essas falhas geram atrasos, erros e insatisfação dos clientes[cite: 1]. Sistemas de mercado como o Saipos já digitalizam parte desse processo, porém concentram a exibição das informações em formato predominantemente textual/listado[cite: 1]. O **KeepServ** se justifica pela proposta de tornar essa comunicação mais visual, ágil e centrada na experiência de quem trabalha sob pressão durante o horário de pico (quadro Kanban, mensagens rápidas, caixa operacional e dashboard de conciliação financeira)[cite: 1].
+O login (`"Entrar no turno"`) exige código da loja, usuário e senha, e direciona o usuário conforme seu papel:
 
-### 6. Escopo / Objetivos
+| Perfil | Nível de acesso | O que faz |
+|---|---|---|
+| **Garçom** | Colaborador | Envia pedidos, acompanha status e recebe alertas de pratos prontos. |
+| **Cozinha** | Colaborador | Visualiza fila de produção em cartões operacionais e atualiza status do pedido. |
+| **Caixa** | Colaborador | Recebe e fecha comandas das mesas. |
+| **Gestor** | Gestor / Dono da loja | Acesso total aos dados da própria loja: dashboard, financeiro, estoque, cardápio e equipe. |
+| **Dev** | Super admin | Acesso exclusivo ao cadastro e gestão de todas as lojas do sistema. |
 
-Desenvolver o _front-end_ funcional da aplicação KeepServ, contemplando[cite: 1]:
+## 🛠️ Stack técnica
 
-- Tela de login/seleção de perfil de acesso ("Entrar no turno": Garçom, Cozinha, Gestor e Caixa)[cite: 1];
-- Quadro de pedidos Kanban (Pendente → Em preparo → Pronto → Entregue) com alertas visuais por cor e SLA de espera[cite: 1];
-- Mensagens rápidas pré-definidas garçom-cozinha por pedido[cite: 1];
-- Módulo de Caixa para fechamento de comandas e acompanhamento de recebimentos[cite: 1];
-- Dashboard do Gestor com fluxo de caixa, DRE sintético, extrato/livro caixa, sangrias, suprimentos e gráficos de consolidação por meio de pagamento e despesas operacionais[cite: 1];
-- Validação por meio de testes de interface com os 4 integrantes do grupo[cite: 1];
-- Utilização de dados mockados/API REST simulada para demonstração[cite: 1];
-- Alinhamento ao conteúdo estudado nas disciplinas do período[cite: 1];
-- Entrega conforme cronograma do semestre letivo[cite: 1].
+| Camada | Tecnologia |
+|---|---|
+| Framework | [React 19](https://react.dev) + [TanStack Start](https://tanstack.com/start) (SSR, file-based routing) |
+| Roteamento | [TanStack Router](https://tanstack.com/router) |
+| Dados assíncronos | [TanStack Query](https://tanstack.com/query) |
+| Estilo | [Tailwind CSS v4](https://tailwindcss.com) |
+| Componentes de UI | [shadcn/ui](https://ui.shadcn.com) sobre [Radix UI](https://www.radix-ui.com) |
+| Formulários | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) |
+| Gráficos | [Recharts](https://recharts.org) |
+| Ícones | [Lucide React](https://lucide.dev) |
+| QR Code | [`qrcode`](https://www.npmjs.com/package/qrcode) |
+| Build / Dev server | [Vite](https://vitejs.dev) |
+| Linguagem | TypeScript (modo `strict`) |
+| Lint / Format | ESLint + Prettier |
 
-### 7. Benefícios Esperados
+> O projeto é gerenciado e sincronizado via [Lovable](https://lovable.dev) (ver `AGENTS.md`) — evite reescrever o histórico git de branches conectadas, pois isso desincroniza o editor do Lovable.
 
-- Redução da comunicação verbal falha entre salão e cozinha[cite: 1].
-- Identificação visual rápida de pedidos atrasados por código de cores[cite: 1].
-- Padronização das observações enviadas à praça/cozinha via mensagens rápidas[cite: 1].
-- Visão consolidada e simplificada da operação para o gestor (livro caixa, resultado líquido e mix de pagamentos)[cite: 1].
-- Interface validada e pronta para futura integração com _back-end_ real[cite: 1].
+## 📂 Estrutura do projeto
 
-### 8. Exclusões (Fora do Escopo)
+```
+src/
+├── routes/              # Rotas (file-based routing do TanStack Router)
+│   ├── index.tsx         # Login / seleção de loja e perfil
+│   ├── pedidos.tsx        # Quadro de pedidos (Kanban)
+│   ├── mesa/              # Mapa de mesas e detalhe de mesa
+│   ├── comanda/           # Comandas e detalhe de comanda por pedido
+│   ├── caixa.tsx          # Caixa & Balcão
+│   ├── cardapio.tsx       # Cardápio & Itens / cardápio digital
+│   ├── dashboard.tsx       # Painel do gestor (financeiro e operacional)
+│   ├── equipe.tsx          # Gestão de equipe
+│   ├── cliente.tsx         # Visão do cliente (cardápio digital via QR)
+│   └── dev.lojas.tsx        # Administração de lojas (perfil dev)
+│
+├── domain/               # Regras de negócio e tipos, por domínio
+│   ├── orders/             # Pedidos, mesas, status, SLA
+│   ├── billing/            # Caixa, pagamentos, fluxo de caixa
+│   ├── menu/                # Cardápio e categorias
+│   ├── stock/                # Estoque e insumos
+│   ├── customers/            # CRM de clientes
+│   └── team/                  # Lojas, usuários, papéis e níveis de acesso
+│
+├── data/
+│   ├── mock/               # Dados simulados (seed) por domínio
+│   └── repositories/        # Camada de acesso a dados (abstrai a fonte)
+│
+├── state/                 # Contexts/stores React por domínio (auth, orders, billing...)
+├── components/
+│   ├── keepserv/            # Componentes específicos do produto (Kanban, Caixa, etc.)
+│   └── ui/                   # Componentes de UI reutilizáveis (shadcn/ui)
+├── hooks/                  # Hooks compartilhados
+├── lib/                     # Utilitários, tratamento de erro, helpers do domínio
+├── styles.css               # Estilos globais (Tailwind)
+├── router.tsx                # Configuração do TanStack Router
+├── server.ts / start.ts       # Entradas de servidor (TanStack Start)
+└── routeTree.gen.ts            # Gerado automaticamente — não editar manualmente
+```
 
-- Desenvolvimento de _back-end_ real e banco de dados persistente[cite: 1].
-- Integração com gateways de pagamento em tempo real (Adquirentes/TEF)[cite: 1].
-- Emissão de documentos e cupons fiscais (NFC-e / SAT)[cite: 1].
-- Gestão complexa de estoque e curva ABC de insumos[cite: 1].
-- Publicação do aplicativo nas lojas oficiais (_Google Play Store / Apple App Store_)[cite: 1].
+## 🚀 Como rodar localmente
 
-### 9. Restrições
+### Pré-requisitos
+- [Node.js](https://nodejs.org) 20+ (ou [Bun](https://bun.sh), já que o projeto tem `bun.lock`)
 
-- Prazo limitado ao calendário do semestre letivo[cite: 1].
-- Equipe composta por 4 integrantes[cite: 1].
-- Foco técnico do semestre restrito ao _Front-end_, sem _back-end_ real[cite: 1].
-- Apresentação final limitada a 15 minutos, conforme critérios da disciplina[cite: 1].
+### Passo a passo
 
-### 10. Riscos
+```bash
+# 1. Clonar o repositório
+git clone <url-do-repositorio>
+cd keep-serv
 
-- Atraso na entrega de alguma _sprint_ por indisponibilidade de integrante da equipe[cite: 1].
-- Retrabalho decorrente de mudanças no protótipo após o início da programação[cite: 1].
-- Dificuldade em simular de forma realista o comportamento de uma API real por meio de _mocks_[cite: 1].
-- Necessidade de ajustes de escopo caso os diferenciais propostos se mostrem complexos demais para o tempo disponível[cite: 1].
+# 2. Instalar dependências
+npm install
+# ou, se preferir Bun:
+bun install
 
-### 11. Partes Interessadas
+# 3. Rodar em modo desenvolvimento
+npm run dev
+```
 
-| Nome                                        | Atribuições / Responsabilidades                        |
-| :------------------------------------------ | :----------------------------------------------------- |
-| **Francisco Tauã**                          | Integrante da equipe de desenvolvimento[cite: 1]       |
-| **Matheus Henrique**                        | Integrante da equipe de desenvolvimento[cite: 1]       |
-| **Douglas Sales**                           | Integrante da equipe de desenvolvimento[cite: 1]       |
-| **Philipe Borges**                          | Integrante da equipe de desenvolvimento[cite: 1]       |
-| **Sosthenes Carlos Ferreira do Nascimento** | Professor responsável / orientador do projeto[cite: 1] |
+O servidor sobe em `http://localhost:3000` (host `0.0.0.0`, então também acessível por IP local/rede).
 
-### 12. Critérios de Aceitação
+### Login de demonstração
 
-O _front-end_ será considerado aceito quando[cite: 1]:
+O sistema usa dados mockados (`src/data/mock`). Use o código de loja `KEEPSERV01` e um dos usuários seed (ex.: `gestor`, `dev`, `garcom`) definidos em `src/data/mock/team.mock.ts` para entrar.
 
-1. Todas as telas previstas (Login, Kanban de pedidos, Caixa e Dashboard do gestor) estiverem operacionais com dados mockados de demonstração[cite: 1].
-2. A navegação entre perfis e seções ocorra sem falhas ou erros de renderização[cite: 1].
-3. Os testes de interface confirmem boa usabilidade e clareza nos fluxos operacionais[cite: 1].
-4. A documentação final atenda às normas ABNT e critérios formais da disciplina[cite: 1].
+## 📜 Scripts disponíveis
+
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Inicia o servidor de desenvolvimento (porta 3000) |
+| `npm run build` | Gera o build de produção |
+| `npm run build:dev` | Gera build em modo desenvolvimento |
+| `npm run preview` | Faz preview local do build de produção |
+| `npm run lint` | Executa o ESLint |
+| `npm run format` | Formata o código com Prettier |
+
+## 🗂️ Modelo de dados (domínio)
+
+O sistema é organizado por domínios de negócio, cada um com `types.ts` (tipos e enums) e `rules.ts` (regras de negócio):
+
+- **Orders** — `OrderStatus` (`pendente | preparo | pronto | entregue | pago`), `UrgencyLevel` (`ontime | warn | late`), itens de pedido, mensagens entre garçom e cozinha, mesas (`DiningTable`) e motivos de indisponibilidade de mesa.
+- **Billing** — formas de pagamento (`dinheiro | debito | credito | pix`), fechamento de comanda, fluxo de caixa, sangrias e suprimentos.
+- **Menu** — produtos, categorias (`prato | entrada | bebida | sobremesa`) e preços.
+- **Stock** — insumos e níveis de estoque vinculados aos itens do cardápio.
+- **Customers** — cadastro e histórico de clientes (CRM).
+- **Team** — lojas (`Loja`, multi-tenant via `codigo_loja`), contas de usuário (`UserAccount`), papéis operacionais (`Role`: `garcom | cozinha | gestor | caixa`) e níveis de acesso (`NivelAcesso`: `dev | gestor | dono_loja | colaborador`).
+
+## 💾 Persistência de dados (mock)
+
+Esta é uma aplicação **front-end de demonstração**: não há back-end real nem banco de dados. Os dados (lojas, usuários, pedidos, cardápio, etc.) são seedados em `src/data/mock/` e mantidos em memória/`localStorage` do navegador via os *stores* em `src/state/` (chaves prefixadas com `keepserv_`, ex. `keepserv_session_v4`). Isso significa que:
+- Os dados persistem entre recarregamentos da página no mesmo navegador;
+- Não há sincronização entre dispositivos ou usuários diferentes;
+- Limpar o `localStorage` do navegador reseta o sistema para o estado inicial (seed).
+
+## 🧭 Roadmap / fora do escopo atual
+
+O foco atual do projeto é a camada de front-end e experiência de uso. Ficam fora do escopo por ora:
+
+- Back-end real e banco de dados persistente;
+- Integração com gateways de pagamento (adquirentes/TEF) em tempo real;
+- Emissão de documentos fiscais (NFC-e / SAT);
+- Gestão avançada de estoque (curva ABC, previsão de demanda);
+- Publicação em lojas de aplicativos (Google Play / App Store).
+
+## 🎓 Sobre o projeto acadêmico
+
+O KeepServ nasceu como projeto interdisciplinar do curso de Análise e Desenvolvimento de Sistemas (Faculdade CCI), integrando as disciplinas de Programação para Dispositivos Móveis I, Programação II (POO), Tópicos Avançados em ADS, Avaliação de Software e Introdução à Rede de Computadores. O Termo de Abertura do Projeto (TAP) e a documentação acadêmica completa, no modelo ABNT, estão disponíveis em [`ACADEMICO.md`](./ACADEMICO.md).
 
 ---
 
-# Documentação Acadêmica (Modelo ABNT)
-
-**INSTITUIÇÃO:** Faculdade CCI[cite: 1]  
-**CURSO:** Análise e Desenvolvimento de Sistemas[cite: 1]  
-**AUTORES:** Matheus Henrique, Francisco Tauã, Douglas Sales, Philipe Borges[cite: 1]  
-**ORIENTADOR:** Prof. Sosthenes Carlos Ferreira do Nascimento[cite: 1]  
-**CIDADE/DATA:** Brasília-DF, 2026[cite: 1]
-
-## RESUMO
-
-O presente trabalho apresenta o desenvolvimento do **KeepServ**, uma aplicação focada no ecossistema de gestão de pedidos e controle financeiro para bares e restaurantes[cite: 1]. O projeto aborda os gargalos operacionais da comunicação entre salão, cozinha e caixa através de uma interface web/mobile responsiva, moderna e visual[cite: 1]. A solução implementa login multiperfil (Garçom, Cozinha, Gestor e Caixa)[cite: 1], quadro Kanban com controle de SLA e mudança de cor por tempo de espera[cite: 1], mensagens pré-definidas entre garçom e praça de preparo[cite: 1], módulo de caixa com fechamento de comandas e um dashboard financeiro completo (com indicadores de fluxo de caixa, conciliação, livro caixa, sangrias e suprimentos)[cite: 1]. O trabalho consolida os conceitos interdisciplinares do curso de ADS da Faculdade CCI[cite: 1].  
-**Palavras-chave:** KeepServ. Gestão de Pedidos. React. Front-end. Kanban. DRE e Caixa[cite: 1].
-
-## 1. INTRODUÇÃO
-
-No setor de gastronomia e _food service_, a velocidade e a precisão do atendimento influenciam diretamente a experiência do cliente e a rentabilidade do negócio. No entanto, sistemas legados frequentemente pecam por apresentar interfaces sobrecarregadas de tabelas textuais e fluxos engessados, dificultando a tomada de decisão em momentos de pico[cite: 1].
-
-O **KeepServ** foi projetado para unificar a comunicação entre salão, cozinha, caixa e gestão sob uma mesma linguagem visual[cite: 1]. Por meio de uma interface intuitiva dividida por papéis de acesso, a plataforma resolve desde o envio ágil de pedidos na mesa até a conciliação financeira do turno pelo gestor[cite: 1].
-
-## 2. OBJETIVOS
-
-### 2.1 Objetivo Geral
-
-Desenvolver a interface _front-end_ e a lógica de interação do sistema KeepServ utilizando arquitetura moderna em componentes, dados mockados e foco na usabilidade para o segmento de bares e restaurantes[cite: 1].
-
-### 2.2 Objetivos Específicos
-
-- Construir a tela de autenticação com seleção de perfis de acesso ("Entrar no turno": Garçom, Cozinha, Gestor e Caixa)[cite: 1].
-- Implementar o quadro Kanban de acompanhamento de pedidos com indicadores visuais de progresso e SLA[cite: 1].
-- Disponibilizar o envio de mensagens rápidas padronizadas entre os garçons e a praça de produção[cite: 1].
-- Projetar o módulo de Caixa com indicadores de faturamento por modalidade de pagamento (Dinheiro, Débito, Crédito e Pix) e recebimento de comandas[cite: 1].
-- Estruturar o Dashboard do Gestor com resumo de Entradas vs. Saídas, DRE simplificado, controle de sangrias/suprimentos, distribuição de custos operacionais e Extrato de Movimentações (Livro Caixa)[cite: 1].
-
-## 3. METODOLOGIA
-
-A condução do trabalho baseou-se na metodologia ágil com sprints de desenvolvimento orientadas a prototipagem e validação funcional[cite: 1]:
-
-1. **Engenharia de Requisitos:** Mapeamento do fluxo de atendimento desde a escolha do perfil de acesso até o encerramento do caixa e balanço financeiro[cite: 1].
-2. **Prototipagem de Alta Fidelidade & UI Design:** Elaboração da identidade visual do KeepServ, utilizando paleta em tons de azul e componentes estruturados para rápida leitura de status[cite: 1].
-3. **Desenvolvimento e Componentização:** Implementação em ambiente JavaScript/TypeScript e React com isolamento de responsabilidades por módulos (Autenticação, Pedidos, Caixa e Dashboard)[cite: 1].
-4. **Testes de Usabilidade e Revisão ABNT:** Validação interna das telas e elaboração do relatório técnico acadêmico[cite: 1].
-
-## 4. INTERDISCIPLINARIDADE
-
-O desenvolvimento do KeepServ reflete a sinergia entre as disciplinas do semestre letivo[cite: 1]:
-
-- **Programação para Dispositivos Móveis I / Front-end:** Construção das telas responsivas, estado da aplicação e componentes de interface adaptativos[cite: 1].
-- **Programação II (POO):** Modelagem orientada a objetos das entidades do sistema (_Order_, _Item_, _Transaction_, _UserRole_)[cite: 1].
-- **Tópicos Avançados em ADS:** Aplicação de padrões de usabilidade, arquitetura limpa em _front-end_ e gerenciamento de estado global[cite: 1].
-- **Avaliação de Software:** Testes de usabilidade, verificação de fluxos de navegação e validação dos critérios de aceitação do TAP[cite: 1].
-- **Introdução à Rede de Computadores:** Estruturação da camada de serviços via chamadas e simulação de rotas RESTful[cite: 1].
-
-## 5. ARQUITETURA DE INTERFACE E FUNCIONALIDADES
-
-### 5.1 Autenticação e Perfis de Acesso
-
-Seletor de perfis para atuação individualizada no turno:
-
-- **Garçom:** Envio de pedidos e alerta de pratos prontos.
-- **Cozinha:** Fila de produção em formato de cartões operacionais.
-- **Gestor:** Métrica global, tempos médios e DRE/Conciliação.
-- **Caixa:** Recebimento e fechamento das comandas das mesas.
-
-### 5.2 Módulo de Caixa e Recebimentos
-
-Apresenta o consolidado das vendas por meio de pagamento (Dinheiro, Débito, Crédito e Pix) e cartões operacionais por comanda, indicando mesa, garçom, itens e subtotal pronto para recebimento.
-
-### 5.3 Dashboard Financeiro e Conciliação (Gestor)
-
-Visão completa contendo Resultado Líquido, Dinheiro na Gaveta, Entradas/Saídas, Sangrias, Suprimentos, gráficos de distribuição de custos e o Extrato de Movimentações (Livro Caixa) com filtros.
-
-## 6. CONCLUSÃO
-
-O projeto **KeepServ** demonstrou a eficiência da aplicação de interfaces focadas no usuário para solucionar gargalos históricos no segmento de bares e restaurantes[cite: 1]. Ao conectar a operação de pista (garçom e cozinha) com os controles administrativos (caixa e gestão financeira), a ferramenta assegura agilidade no atendimento e precisão no controle de caixa[cite: 1]. Todos os requisitos previstos no Termo de Abertura do Projeto foram cumpridos com êxito[cite: 1].
-
----
-
-## REFERÊNCIAS BIBLIOGRÁFICAS
-
-1. PRESSMAN, Roger S.; MAXIM, Bruce R. **Engenharia de Software:** uma abordagem profissional. 8. ed. Porto Alegre: AMGH, 2016.
-2. SOMMERVILLE, Ian. **Engenharia de Software.** 10. ed. São Paulo: Pearson Education do Brasil, 2019.
-3. SILVA, Maurício Samy. **React Native:** Desenvolvimento de aplicações móveis com JavaScript. 1. ed. São Paulo: Novatec, 2020.
+<p align="center">Desenvolvido por Francisco Tauã, Matheus Henrique, Douglas Sales e Philipe Borges — Brasília/DF, 2026.</p>

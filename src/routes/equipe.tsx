@@ -6,7 +6,7 @@ import { AppShell } from "@/components/keepserv/app-shell";
 import { TeamManagement } from "@/components/keepserv/team-management";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useAuth } from "@/state";
 
 export const Route = createFileRoute("/equipe")({
   head: () => ({
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/equipe")({
 });
 
 function EquipePage() {
-  const { session, activeLoja } = useKeepServ();
+  const { session, activeLoja } = useAuth();
   const navigate = useNavigate();
 
   // --- MIDDLEWARE DE PROTEÇÃO DE ROTA ---

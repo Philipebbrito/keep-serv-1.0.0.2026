@@ -56,14 +56,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useMenu } from "@/state";
 import {
   CATEGORY_LABEL,
   CATEGORY_ORDER,
   type MenuItem,
   type NewProductInput,
-} from "@/lib/keepserv/menu";
-import { useKeepServ } from "@/lib/keepserv/store";
-import type { OrderItem } from "@/lib/keepserv/types";
+  type OrderItem,
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 const HIGHLIGHT_LABELS: Record<
@@ -124,7 +124,7 @@ export function MenuStockManagement() {
     adjustStock,
     toggleProductActive,
     resetProductsToDefault,
-  } = useKeepServ();
+  } = useMenu();
 
   // Filtros e busca
   const [search, setSearch] = useState("");

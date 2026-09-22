@@ -42,8 +42,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useKeepServ } from "@/lib/keepserv/store";
-import type { StatusLoja, UserAccount, Loja } from "@/lib/keepserv/types";
+import { useAuth } from "@/state";
+import type { StatusLoja, UserAccount, Loja } from "@/domain";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dev/lojas")({
@@ -84,7 +84,7 @@ function DevLojasPage() {
     toggleLojaStatus,
     deleteLoja,
     logout,
-  } = useKeepServ();
+  } = useAuth();
   const navigate = useNavigate();
 
   // Estados do Formulário de Criação

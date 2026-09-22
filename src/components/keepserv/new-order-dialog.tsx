@@ -14,10 +14,14 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORY_LABEL, CATEGORY_ORDER, type MenuItem } from "@/lib/keepserv/menu";
-import { getProductStockStatus } from "@/lib/keepserv/stock";
-import { useKeepServ } from "@/lib/keepserv/store";
-import type { OrderItem } from "@/lib/keepserv/types";
+import { useMenu, useOrders, useStock } from "@/state";
+import {
+  CATEGORY_LABEL,
+  CATEGORY_ORDER,
+  getProductStockStatus,
+  type MenuItem,
+  type OrderItem,
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 interface DraftItem {
@@ -30,7 +34,9 @@ interface DraftItem {
 }
 
 export function NewOrderDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { createOrder, products, stockItems } = useKeepServ();
+  const { createOrder } = useOrders();
+  const { products } = useMenu();
+  const { stockItems } = useStock();
   const [table, setTable] = useState<string>("");
   const [guests, setGuests] = useState<string>("2");
   const [items, setItems] = useState<DraftItem[]>([]);

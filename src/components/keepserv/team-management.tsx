@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { ROLE_DESCRIPTION, ROLE_LABEL, type Role, type UserAccount } from "@/lib/keepserv/types";
+import { useAuth } from "@/state";
+import { ROLE_DESCRIPTION, ROLE_LABEL, type Role, type UserAccount } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const ROLE_ICONS: Record<Role, typeof Users> = {
@@ -90,7 +90,7 @@ export function TeamManagement() {
     deleteUser,
     toggleUserStatus,
     login,
-  } = useKeepServ();
+  } = useAuth();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "todos">("todos");

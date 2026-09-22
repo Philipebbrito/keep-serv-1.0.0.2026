@@ -2,14 +2,8 @@ import { useState } from "react";
 import { OrderCard } from "./order-card";
 import { OrderDialog } from "./order-dialog";
 import { PaymentDialog } from "./payment-dialog";
-import { useKeepServ } from "@/lib/keepserv/store";
-import {
-  STATUS_LABEL,
-  STATUS_ORDER,
-  urgencyFor,
-  type Order,
-  type OrderStatus,
-} from "@/lib/keepserv/types";
+import { useAuth, useOrders } from "@/state";
+import { STATUS_LABEL, STATUS_ORDER, urgencyFor, type Order, type OrderStatus } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const COLUMN_ACCENT: Record<OrderStatus, string> = {
@@ -21,7 +15,8 @@ const COLUMN_ACCENT: Record<OrderStatus, string> = {
 };
 
 export function Kanban() {
-  const { orders, session, moveTo, now } = useKeepServ();
+  const { orders, moveTo, now } = useOrders();
+  const { session } = useAuth();
   const [openId, setOpenId] = useState<string | null>(null);
   const [payOrder, setPayOrder] = useState<Order | null>(null);
   const [dragOver, setDragOver] = useState<OrderStatus | null>(null);

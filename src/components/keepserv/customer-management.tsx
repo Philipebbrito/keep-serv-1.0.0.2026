@@ -57,7 +57,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useAuth, useCustomers } from "@/state";
 import {
   COMMON_DIETARY_RESTRICTIONS,
   TABLE_LOCATIONS,
@@ -68,7 +68,7 @@ import {
   type CustomerStatus,
   type CustomerVisit,
   type NewCustomerInput,
-} from "@/lib/keepserv/customers";
+} from "@/domain";
 
 type FilterTab =
   "todos" | "vip" | "frequente" | "aniversariantes" | "em_risco" | "restricoes" | "novos";
@@ -84,8 +84,8 @@ export function CustomerManagement() {
     deleteCustomer,
     recordCustomerVisit,
     resetCustomersToDefault,
-    session,
-  } = useKeepServ();
+  } = useCustomers();
+  const { session } = useAuth();
 
   // Estados de busca e filtros
   const [searchTerm, setSearchTerm] = useState("");

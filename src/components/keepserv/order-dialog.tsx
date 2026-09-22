@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { QUICK_MESSAGES_KITCHEN, QUICK_MESSAGES_WAITER } from "@/lib/keepserv/mock-data";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { QUICK_MESSAGES_KITCHEN, QUICK_MESSAGES_WAITER } from "@/data";
+import { useAuth, useOrders } from "@/state";
 import {
   elapsedLabel,
   orderTotal,
@@ -21,7 +21,7 @@ import {
   STATUS_LABEL,
   STATUS_ORDER,
   type Order,
-} from "@/lib/keepserv/types";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 function time(at: number) {
@@ -37,7 +37,8 @@ export function OrderDialog({
   onClose: () => void;
   onPay?: (order: Order) => void;
 }) {
-  const { session, now, sendMessage, moveTo, togglePriority, cancelItem } = useKeepServ();
+  const { now, sendMessage, moveTo, togglePriority, cancelItem } = useOrders();
+  const { session } = useAuth();
   const [draft, setDraft] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
 

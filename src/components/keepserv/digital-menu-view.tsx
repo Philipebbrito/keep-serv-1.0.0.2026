@@ -20,9 +20,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CATEGORY_LABEL, CATEGORY_ORDER, type MenuItem } from "@/lib/keepserv/menu";
-import { useKeepServ } from "@/lib/keepserv/store";
-import type { Order } from "@/lib/keepserv/types";
+import { useMenu } from "@/state";
+import { CATEGORY_LABEL, CATEGORY_ORDER, type MenuItem, type Order } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,7 +48,7 @@ export function DigitalMenuView({
   onAskItem,
   onStartOrderWithItems,
 }: DigitalMenuViewProps) {
-  const { products } = useKeepServ();
+  const { products } = useMenu();
   const [selectedCategory, setSelectedCategory] = useState<string>("todos");
   const [search, setSearch] = useState("");
   const [selectedHighlight, setSelectedHighlight] = useState<string>("todos");

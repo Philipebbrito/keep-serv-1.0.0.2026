@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useAuth, useBilling, useOrders } from "@/state";
 import {
   CASH_FLOW_CATEGORY_LABEL,
   orderTotal,
@@ -64,7 +64,7 @@ import {
   type CashFlowEntry,
   type CashFlowType,
   type PaymentMethod,
-} from "@/lib/keepserv/types";
+} from "@/domain";
 
 function formatBRL(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -113,14 +113,10 @@ function formatDateDisplay(d: Date): string {
 }
 
 export function CashFlowManager() {
-  const {
-    cashFlowEntries,
-    orders,
-    addCashFlowEntry,
-    deleteCashFlowEntry,
-    resetCashFlowToDefault,
-    session,
-  } = useKeepServ();
+  const { cashFlowEntries, addCashFlowEntry, deleteCashFlowEntry, resetCashFlowToDefault } =
+    useBilling();
+  const { orders } = useOrders();
+  const { session } = useAuth();
 
   // Estados de navegação temporal / histórico por data
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());

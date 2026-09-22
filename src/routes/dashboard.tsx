@@ -47,14 +47,9 @@ import { WaiterDashboard } from "@/components/keepserv/waiter-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  AVG_TIME_BY_STATION,
-  ORDERS_BY_HOUR,
-  TABLES_TOTAL,
-  TOP_PRODUCTS,
-} from "@/lib/keepserv/mock-data";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal, STATUS_LABEL, urgencyFor, type Order } from "@/lib/keepserv/types";
+import { AVG_TIME_BY_STATION, ORDERS_BY_HOUR, TOP_PRODUCTS } from "@/data";
+import { useAuth, useMenu, useOrders, useStock } from "@/state";
+import { orderTotal, STATUS_LABEL, TABLES_TOTAL, urgencyFor, type Order } from "@/domain";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -154,17 +149,10 @@ const tooltipStyle = {
 };
 
 function DashboardPage() {
-  const {
-    orders,
-    now,
-    session,
-    users,
-    products,
-    stockItems,
-    requestCleanup,
-    completeCleanup,
-    printBill,
-  } = useKeepServ();
+  const { orders, now, requestCleanup, completeCleanup, printBill } = useOrders();
+  const { session, users } = useAuth();
+  const { products } = useMenu();
+  const { stockItems } = useStock();
   const isWaiter = session?.role === "garcom";
   const [managerView, setManagerView] = useState<"gestor" | "garcom">(
     isWaiter ? "garcom" : "gestor",

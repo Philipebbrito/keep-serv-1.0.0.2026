@@ -36,23 +36,23 @@ import { OrderDialog } from "@/components/keepserv/order-dialog";
 import { PaymentDialog } from "@/components/keepserv/payment-dialog";
 import { QRCodeModal } from "@/components/keepserv/qr-code-modal";
 import { RecentOrdersList } from "@/components/keepserv/recent-orders-list";
-import { TABLES_TOTAL } from "@/lib/keepserv/mock-data";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useAuth, useOrders } from "@/state";
 import {
   elapsedLabel,
   orderTotal,
   PAYMENT_LABEL,
   STATUS_LABEL,
+  TABLES_TOTAL,
   urgencyFor,
   type Order,
-} from "@/lib/keepserv/types";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function WaiterDashboard() {
-  const { orders, session, now, moveTo, requestCleanup, completeCleanup, printBill } =
-    useKeepServ();
+  const { orders, now, moveTo, requestCleanup, completeCleanup, printBill } = useOrders();
+  const { session } = useAuth();
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [payOrder, setPayOrder] = useState<Order | null>(null);

@@ -1,13 +1,7 @@
 import { AlertTriangle, ChevronRight, Clock, MessageSquare, Receipt, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useKeepServ } from "@/lib/keepserv/store";
-import {
-  elapsedLabel,
-  orderTotal,
-  STATUS_ORDER,
-  urgencyFor,
-  type Order,
-} from "@/lib/keepserv/types";
+import { useOrders } from "@/state";
+import { elapsedLabel, orderTotal, STATUS_ORDER, urgencyFor, type Order } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const URGENCY_STYLE = {
@@ -39,7 +33,7 @@ export function OrderCard({
   canAdvance: boolean;
   onPay?: () => void;
 }) {
-  const { now, advance } = useKeepServ();
+  const { now, advance } = useOrders();
   const urgency = urgencyFor(order, now);
   const style = URGENCY_STYLE[urgency];
   const idx = STATUS_ORDER.indexOf(order.status);

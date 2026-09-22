@@ -25,9 +25,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getCustomerBirthdayInfo } from "@/lib/keepserv/customers";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { ROLE_LABEL, urgencyFor } from "@/lib/keepserv/types";
+import { getCustomerBirthdayInfo, ROLE_LABEL, urgencyFor } from "@/domain";
+import { useAuth, useBilling, useCustomers, useMenu, useOrders, useStock } from "@/state";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -47,18 +46,12 @@ interface NavGroup {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const {
-    session,
-    activeLoja,
-    logout,
-    orders,
-    stockItems,
-    products,
-    users,
-    bills,
-    customers,
-    now,
-  } = useKeepServ();
+  const { session, activeLoja, logout, users } = useAuth();
+  const { orders, now } = useOrders();
+  const { stockItems } = useStock();
+  const { products } = useMenu();
+  const { bills } = useBilling();
+  const { customers } = useCustomers();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -563,15 +556,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </div>
             </div>
-
-           
           </div>
         )}
 
-        
-
         {/* No modo colapsado, botão de logout individual */}
-        
       </div>
     </div>
   );

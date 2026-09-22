@@ -44,13 +44,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useMenu, useStock } from "@/state";
 import {
   STOCK_TYPE_LABEL,
   type NewStockItemInput,
   type StockItem,
   type StockItemType,
-} from "@/lib/keepserv/stock";
-import { useKeepServ } from "@/lib/keepserv/store";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 export function StockManagement() {
@@ -61,8 +61,8 @@ export function StockManagement() {
     deleteStockItem,
     adjustStockItem,
     resetStockToDefault,
-    products,
-  } = useKeepServ();
+  } = useStock();
+  const { products } = useMenu();
 
   // Filtros
   const [search, setSearch] = useState("");

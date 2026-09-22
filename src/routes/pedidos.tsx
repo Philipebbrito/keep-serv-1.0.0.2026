@@ -5,8 +5,8 @@ import { AppShell } from "@/components/keepserv/app-shell";
 import { Kanban } from "@/components/keepserv/kanban";
 import { NewOrderDialog } from "@/components/keepserv/new-order-dialog";
 import { Button } from "@/components/ui/button";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { urgencyFor } from "@/lib/keepserv/types";
+import { useAuth, useOrders } from "@/state";
+import { urgencyFor } from "@/domain";
 
 export const Route = createFileRoute("/pedidos")({
   head: () => ({
@@ -41,7 +41,8 @@ const ROLE_HINT = {
 } as const;
 
 function PedidosPage() {
-  const { orders, session, now } = useKeepServ();
+  const { orders, now } = useOrders();
+  const { session } = useAuth();
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   if (!session) return null;
 

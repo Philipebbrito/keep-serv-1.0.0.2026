@@ -50,7 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useBilling } from "@/state";
 import {
   BILL_CATEGORY_CONFIG,
   BILL_STATUS_LABEL,
@@ -60,7 +60,7 @@ import {
   type BillType,
   type NewBillInput,
   type Recurrence,
-} from "@/lib/keepserv/bills";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 function formatBRL(val: number) {
@@ -119,7 +119,7 @@ export function BillsManagement() {
     reconcileStatementItem,
     autoReconcileAll,
     resetBillsToDefault,
-  } = useKeepServ();
+  } = useBilling();
 
   // Estados de navegação interna
   const [activeTab, setActiveTab] = useState<

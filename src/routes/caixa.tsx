@@ -14,14 +14,8 @@ import { PaymentDialog } from "@/components/keepserv/payment-dialog";
 import { CashFlowManager } from "@/components/keepserv/cash-flow-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useKeepServ } from "@/lib/keepserv/store";
-import {
-  orderTotal,
-  PAYMENT_LABEL,
-  STATUS_LABEL,
-  type Order,
-  type PaymentMethod,
-} from "@/lib/keepserv/types";
+import { useOrders } from "@/state";
+import { orderTotal, PAYMENT_LABEL, STATUS_LABEL, type Order, type PaymentMethod } from "@/domain";
 
 export const Route = createFileRoute("/caixa")({
   head: () => ({
@@ -58,7 +52,7 @@ const METHOD_ICON: Record<PaymentMethod, typeof Banknote> = {
 };
 
 function CaixaPage() {
-  const { orders } = useKeepServ();
+  const { orders } = useOrders();
   const [activeTab, setActiveTab] = useState<"fluxo" | "comandas">("fluxo");
   const [selected, setSelected] = useState<Order | null>(null);
 

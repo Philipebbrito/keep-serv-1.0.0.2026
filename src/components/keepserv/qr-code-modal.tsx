@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { orderTotal, type Order } from "@/lib/keepserv/types";
+import { orderTotal, type Order } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

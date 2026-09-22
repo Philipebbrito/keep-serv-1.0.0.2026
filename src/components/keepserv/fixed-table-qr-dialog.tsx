@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TABLES_TOTAL } from "@/lib/keepserv/mock-data";
+import { TABLES_TOTAL } from "@/domain";
 
 interface FixedTableQRDialogProps {
   open: boolean;

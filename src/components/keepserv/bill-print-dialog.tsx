@@ -20,8 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal, type Order } from "@/lib/keepserv/types";
+import { useOrders } from "@/state";
+import { orderTotal, type Order } from "@/domain";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -34,7 +34,7 @@ export function BillPrintDialog({
   onClose: () => void;
   onPay?: (order: Order) => void;
 }) {
-  const { printBill } = useKeepServ();
+  const { printBill } = useOrders();
   const [copiedPix, setCopiedPix] = useState(false);
   const [includeService, setIncludeService] = useState(true);
 

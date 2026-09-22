@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal, ROLE_LABEL, type Order, type PaymentMethod } from "@/lib/keepserv/types";
+import { useAuth, useOrders } from "@/state";
+import { orderTotal, ROLE_LABEL, type Order, type PaymentMethod } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -24,7 +24,8 @@ const METHODS: { id: PaymentMethod; label: string; icon: typeof Banknote }[] = [
 ];
 
 export function PaymentDialog({ order, onClose }: { order: Order | null; onClose: () => void }) {
-  const { registerPayment, session } = useKeepServ();
+  const { registerPayment } = useOrders();
+  const { session } = useAuth();
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [split, setSplit] = useState(1);
 

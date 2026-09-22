@@ -15,9 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DigitalMenuView } from "@/components/keepserv/digital-menu-view";
-import { TABLES_TOTAL } from "@/lib/keepserv/mock-data";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal } from "@/lib/keepserv/types";
+import { useOrders } from "@/state";
+import { orderTotal, TABLES_TOTAL } from "@/domain";
 
 export const Route = createFileRoute("/cliente")({
   head: () => ({
@@ -42,7 +41,7 @@ export const Route = createFileRoute("/cliente")({
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function ClientePage() {
-  const { orders } = useKeepServ();
+  const { orders } = useOrders();
   const navigate = useNavigate();
   const [comandaInput, setComandaInput] = useState("");
   const [activeTab, setActiveTab] = useState<"mesas" | "cardapio">("mesas");

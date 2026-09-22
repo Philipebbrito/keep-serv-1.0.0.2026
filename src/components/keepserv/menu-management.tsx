@@ -43,27 +43,28 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useMenu, useStock } from "@/state";
 import {
   MENU_CATEGORIES,
+  getProductStockStatus,
   type MenuCategory,
   type MenuItem,
   type NewProductInput,
+  type RecipeIngredient,
   type StockConsumptionType,
-} from "@/lib/keepserv/menu";
-import { getProductStockStatus, type RecipeIngredient } from "@/lib/keepserv/stock";
-import { useKeepServ } from "@/lib/keepserv/store";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 export function MenuManagement() {
   const {
     products,
-    stockItems,
     addProduct,
     updateProduct,
     deleteProduct,
     toggleProductActive,
     resetProductsToDefault,
-  } = useKeepServ();
+  } = useMenu();
+  const { stockItems } = useStock();
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<"todas" | MenuCategory>("todas");

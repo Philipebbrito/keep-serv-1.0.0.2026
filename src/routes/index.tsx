@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useKeepServ } from "@/lib/keepserv/store";
-import type { UserAccount } from "@/lib/keepserv/types";
+import { useAuth } from "@/state";
+import type { UserAccount } from "@/domain";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/")({
 });
 
 function LoginPage() {
-  const { loginWithCredentials, allUsers, allLojas, changeUserPassword } = useKeepServ();
+  const { loginWithCredentials, allUsers, allLojas, changeUserPassword } = useAuth();
   const navigate = useNavigate();
 
   const [codigoLoja, setCodigoLoja] = useState("");

@@ -39,9 +39,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { DigitalMenuView } from "./digital-menu-view";
-import type { MenuItem } from "@/lib/keepserv/menu";
-import { useKeepServ } from "@/lib/keepserv/store";
-import { orderTotal, type Order, type OrderItem, type OrderStatus } from "@/lib/keepserv/types";
+import { useOrders } from "@/state";
+import { orderTotal, type MenuItem, type Order, type OrderItem, type OrderStatus } from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -61,7 +60,7 @@ interface CustomerBillViewProps {
 }
 
 export function CustomerBillView({ orderId }: CustomerBillViewProps) {
-  const { orders, now, sendCustomerMessage, setCustomerInfo, createOrder } = useKeepServ();
+  const { orders, now, sendCustomerMessage, setCustomerInfo, createOrder } = useOrders();
 
   // Detecta se a rota ou parâmetro corresponde a uma mesa fixa (ex: "4", "mesa-4", etc.)
   const detectedTableNumber = useMemo(() => {

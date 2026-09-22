@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useKeepServ } from "@/lib/keepserv/store";
+import { useAuth, useOrders } from "@/state";
 import {
   elapsedLabel,
   orderTotal,
@@ -45,7 +45,7 @@ import {
   type Order,
   type OrderStatus,
   type PaymentMethod,
-} from "@/lib/keepserv/types";
+} from "@/domain";
 import { cn } from "@/lib/utils";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -92,7 +92,8 @@ export function RecentOrdersList({
   onPayOrder,
   className,
 }: RecentOrdersListProps) {
-  const { orders, session, now } = useKeepServ();
+  const { orders, now } = useOrders();
+  const { session } = useAuth();
   const waiterName = session?.name ?? "Garçom";
 
   const [scope, setScope] = useState<"mine" | "all">("mine");

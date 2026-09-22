@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PRESET_FOOD_IMAGES, type PresetFoodImage } from "@/lib/keepserv/menu";
+import { PRESET_FOOD_IMAGES } from "@/data";
+import { type PresetFoodImage } from "@/domain";
 import { cn } from "@/lib/utils";
 
 interface ProductPhotoUploaderProps {

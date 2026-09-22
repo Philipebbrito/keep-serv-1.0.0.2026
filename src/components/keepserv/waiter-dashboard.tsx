@@ -8,6 +8,7 @@ import {
   Clock,
   DollarSign,
   HandPlatter,
+  LayoutDashboard,
   Phone,
   Plus,
   Printer,
@@ -25,6 +26,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,7 @@ export function WaiterDashboard() {
   const { orders, tables, activeTables, now, moveTo, requestCleanup, completeCleanup, printBill } =
     useOrders();
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [tableManagerOpen, setTableManagerOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -231,8 +234,17 @@ export function WaiterDashboard() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
-            onClick={() => setTableManagerOpen(true)}
+            onClick={() => navigate({ to: "/dashboard", search: { tab: "operacao" } })}
             className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary"
+            title="Ir para a página de Operação Geral do Salão"
+          >
+            <LayoutDashboard className="size-4" />
+            <span>Operação do Salão</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setTableManagerOpen(true)}
+            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary font-medium"
             title="Ajustar quantidade de mesas ou pausar/reativar mesas na operação"
           >
             <Table2 className="size-4" />

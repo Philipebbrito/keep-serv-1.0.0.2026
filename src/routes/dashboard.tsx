@@ -172,12 +172,19 @@ function DashboardPage() {
     "cardapio",
     "estoque",
     "equipe",
+    "garcom",
   ] as const;
   type GestorTab = (typeof validTabs)[number];
 
-  const gestorTab: GestorTab = validTabs.includes(tabParam as GestorTab)
+  const rawTab: GestorTab = validTabs.includes(tabParam as GestorTab)
     ? (tabParam as GestorTab)
     : "operacao";
+
+  // Se o usuário logado for garçom e tentar acessar abas restritas de gestão financeira/equipe, mantém em 'operacao'
+  const gestorTab: GestorTab =
+    isWaiter && ["fluxo_caixa", "contas_pagar_receber", "equipe"].includes(rawTab)
+      ? "operacao"
+      : rawTab;
 
   const changeGestorTab = (tab: GestorTab) => {
     navigate({
@@ -191,26 +198,40 @@ function DashboardPage() {
 
   const lowStockAlertCount = stockItems.filter((s) => s.currentStock <= s.minStock).length;
 
-  // Se o usuário logado for perfil garçom, ou se o gestor selecionou a visão do garçom
-  if (isWaiter || managerView === "garcom") {
+  // Se a aba selecionada for 'garcom' (Terminal do Garçom) ou se o gestor ativou a visão do garçom
+  if (gestorTab === "garcom" || (!isWaiter && managerView === "garcom")) {
     return (
       <div>
-        {!isWaiter && (
-          <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 flex items-center justify-between border-b border-border pb-3 mb-2">
+        <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 sm:px-6 flex items-center justify-between border-b border-border pb-3 mb-2">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs text-muted-foreground">
-              Você está visualizando o <strong>Dashboard do Garçom</strong> em modo gestor.
+              {isWaiter ? (
+                <>
+                  Você está no seu <strong>Terminal de Atendimento do Garçom</strong>.
+                </>
+              ) : (
+                <>
+                  Você está visualizando o <strong>Dashboard do Garçom</strong> em modo gestor.
+                </>
+              )}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-8 gap-1.5"
-              onClick={() => setManagerView("gestor")}
-            >
-              ← Voltar ao Dashboard do Gestor
-            </Button>
           </div>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs h-8 gap-1.5 border-primary/30 text-primary hover:bg-primary/5 shadow-2xs"
+            onClick={() => {
+              setManagerView("gestor");
+              changeGestorTab("operacao");
+            }}
+          >
+            <LayoutDashboard className="size-3.5" />
+            <span>← Ir para Operação do Salão</span>
+          </Button>
+        </div>
         <WaiterDashboard />
+        <TableManagementDialog open={tableManagerOpen} onOpenChange={setTableManagerOpen} />
       </div>
     );
   }
@@ -292,7 +313,7 @@ function DashboardPage() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 text-xs h-9 shadow-2xs border-primary/30 text-primary hover:bg-primary/5"
+            className="gap-2 text-xs h-9 shadow-2xs border-primary/30 text-primary hover:bg-primary/5 font-medium"
             onClick={() => setTableManagerOpen(true)}
             title="Alterar quantidade de mesas ou pausar/reativar mesas na operação"
           >
@@ -306,10 +327,10 @@ function DashboardPage() {
             variant="outline"
             size="sm"
             className="gap-2 text-xs h-9 shadow-2xs"
-            onClick={() => setManagerView("garcom")}
+            onClick={() => changeGestorTab("garcom")}
           >
             <UserCheck className="size-4 text-primary" />
-            <span>Visão do Garçom</span>
+            <span>{isWaiter ? "Meu Terminal de Garçom" : "Visão do Garçom"}</span>
           </Button>
         </div>
       </div>

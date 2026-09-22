@@ -16,6 +16,7 @@ import {
   Receipt,
   Shield,
   Store,
+  UserCheck,
   Users,
   UtensilsCrossed,
   Wallet,
@@ -124,6 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isDev = session.nivel === "dev";
   const isGestor =
     session.nivel === "gestor" || session.nivel === "dono_loja" || session.role === "gestor";
+  const isGarcom = session.role === "garcom";
 
   // Métricas dinâmicas para os badges em tempo real
   const activeOrders = orders.filter((o) => o.status !== "entregue" && o.status !== "pago");
@@ -155,6 +157,22 @@ export function AppShell({ children }: { children: ReactNode }) {
       title: "Operação & Salão",
       items: [
         {
+          to: "/dashboard",
+          search: "?tab=operacao",
+          label: "Operação do Salão",
+          icon: LayoutDashboard,
+          badge: occupiedTablesCount > 0 ? `${occupiedTablesCount} mesas` : null,
+          badgeVariant: lateOrders.length > 0 ? "destructive" : "secondary",
+          show: !isDev && (isGestor || isGarcom),
+        },
+        {
+          to: "/dashboard",
+          search: "?tab=garcom",
+          label: "Terminal do Garçom",
+          icon: UserCheck,
+          show: !isDev && (isGarcom || isGestor),
+        },
+        {
           to: "/pedidos",
           label: "Quadro de pedidos",
           icon: KanbanSquare,
@@ -184,15 +202,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     {
       title: "Gestão & PDV",
       items: [
-        {
-          to: "/dashboard",
-          search: "?tab=operacao",
-          label: "Painel Geral",
-          icon: LayoutDashboard,
-          badge: occupiedTablesCount > 0 ? `${occupiedTablesCount} mesas` : null,
-          badgeVariant: lateOrders.length > 0 ? "destructive" : "secondary",
-          show: !isDev && isGestor,
-        },
         {
           to: "/dashboard",
           search: "?tab=cardapio",
@@ -302,6 +311,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       return { label: "Quadro de Pedidos", icon: KanbanSquare, group: "Operação & Salão" };
     }
     if (pathname === "/dashboard") {
+      const currentTab = activeTabParam || effectiveSearch.replace("?tab=", "") || "operacao";
+      if (currentTab === "operacao") {
+        return { label: "Operação do Salão", icon: LayoutDashboard, group: "Operação & Salão" };
+      }
+      if (currentTab === "garcom") {
+        return { label: "Terminal do Garçom", icon: UserCheck, group: "Operação & Salão" };
+      }
       return { label: "Dashboard Operacional", icon: LayoutDashboard, group: "Gestão & PDV" };
     }
     if (pathname === "/equipe") {

@@ -309,28 +309,28 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 text-xs h-9 shadow-2xs border-primary/30 text-primary hover:bg-primary/5 font-medium"
+            className="gap-1.5 text-xs h-10 sm:h-9 shadow-2xs border-primary/30 text-primary hover:bg-primary/5 font-medium justify-center"
             onClick={() => setTableManagerOpen(true)}
             title="Alterar quantidade de mesas ou pausar/reativar mesas na operação"
           >
-            <Table2 className="size-4" />
-            <span>
-              Gerenciar Mesas ({activeTables.length}/{tables.length})
+            <Table2 className="size-4 shrink-0" />
+            <span className="truncate">
+              Mesas ({activeTables.length}/{tables.length})
             </span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 text-xs h-9 shadow-2xs"
+            className="gap-1.5 text-xs h-10 sm:h-9 shadow-2xs justify-center"
             onClick={() => changeGestorTab("garcom")}
           >
-            <UserCheck className="size-4 text-primary" />
-            <span>{isWaiter ? "Meu Terminal de Garçom" : "Visão do Garçom"}</span>
+            <UserCheck className="size-4 text-primary shrink-0" />
+            <span className="truncate">{isWaiter ? "Meu Terminal" : "Visão Garçom"}</span>
           </Button>
         </div>
       </div>

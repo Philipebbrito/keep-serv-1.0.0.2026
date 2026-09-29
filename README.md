@@ -37,6 +37,7 @@ O **KeepServ** centraliza essa operação em um só lugar, com uma tela pensada 
 ## ✨ Funcionalidades
 
 ### Operação & Salão
+
 - **Quadro de pedidos (Kanban)** — pedidos fluem por `Pendente → Em preparo → Pronto → Entregue → Pago`, com alerta visual e contagem de tempo em atraso por SLA.
 - **Gestão de mesas** — mapa de mesas com status (livre, ocupada, reservada, manutenção, avariada) e motivo customizável.
 - **Comandas por mesa** — abertura, itens, observações e mensagens rápidas trocadas entre garçom e cozinha por pedido.
@@ -44,54 +45,59 @@ O **KeepServ** centraliza essa operação em um só lugar, com uma tela pensada 
 - **Novo pedido / edição de pedido** — inclusão de itens por categoria (prato, entrada, bebida, sobremesa), quantidade e observações, com possibilidade de cancelamento de item.
 
 ### Caixa & Pagamentos
+
 - **Caixa & Balcão** — recebimento e fechamento de comandas por mesa.
 - **Múltiplas formas de pagamento** — Dinheiro, Débito, Crédito e Pix, com emissão de comprovante/dialog de impressão.
 
 ### Cardápio & Estoque
+
 - **Cardápio & Itens** — cadastro de produtos, categorias, preços e fotos.
 - **Estoque & Insumos** — controle de insumos vinculados aos itens do cardápio, com alertas de nível.
 
 ### Financeiro (Gestor)
+
 - **Painel Geral** — ocupação de mesas, pedidos em atraso, tempo médio de atendimento, faturamento em aberto, gráficos de pedidos por hora, produtos mais vendidos, tempo médio por etapa e fila atual por etapa.
 - **Fluxo de Caixa** — entradas, saídas, sangrias e suprimentos em tempo real.
 - **Contas a Pagar** — controle de vencimentos e contas em atraso.
 - **Extrato / Livro Caixa** — histórico consolidado de movimentações com filtros.
 
 ### Clientes & Equipe
+
 - **CRM de Clientes** — cadastro, histórico de consumo e aniversariantes.
 - **Minha Equipe** — gestão de colaboradores, cargos operacionais e níveis de acesso.
 
 ### Multi-loja (multi-tenant)
+
 - Suporte a múltiplas lojas sob o mesmo sistema, com **código da loja** exigido no login, permitindo isolamento de dados entre estabelecimentos e um nível de acesso `dev` (super admin) para administração das lojas cadastradas.
 
 ## 👥 Perfis de acesso
 
 O login (`"Entrar no turno"`) exige código da loja, usuário e senha, e direciona o usuário conforme seu papel:
 
-| Perfil | Nível de acesso | O que faz |
-|---|---|---|
-| **Garçom** | Colaborador | Envia pedidos, acompanha status e recebe alertas de pratos prontos. |
-| **Cozinha** | Colaborador | Visualiza fila de produção em cartões operacionais e atualiza status do pedido. |
-| **Caixa** | Colaborador | Recebe e fecha comandas das mesas. |
-| **Gestor** | Gestor / Dono da loja | Acesso total aos dados da própria loja: dashboard, financeiro, estoque, cardápio e equipe. |
-| **Dev** | Super admin | Acesso exclusivo ao cadastro e gestão de todas as lojas do sistema. |
+| Perfil      | Nível de acesso       | O que faz                                                                                  |
+| ----------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| **Garçom**  | Colaborador           | Envia pedidos, acompanha status e recebe alertas de pratos prontos.                        |
+| **Cozinha** | Colaborador           | Visualiza fila de produção em cartões operacionais e atualiza status do pedido.            |
+| **Caixa**   | Colaborador           | Recebe e fecha comandas das mesas.                                                         |
+| **Gestor**  | Gestor / Dono da loja | Acesso total aos dados da própria loja: dashboard, financeiro, estoque, cardápio e equipe. |
+| **Dev**     | Super admin           | Acesso exclusivo ao cadastro e gestão de todas as lojas do sistema.                        |
 
 ## 🛠️ Stack técnica
 
-| Camada | Tecnologia |
-|---|---|
-| Framework | [React 19](https://react.dev) + [TanStack Start](https://tanstack.com/start) (SSR, file-based routing) |
-| Roteamento | [TanStack Router](https://tanstack.com/router) |
-| Dados assíncronos | [TanStack Query](https://tanstack.com/query) |
-| Estilo | [Tailwind CSS v4](https://tailwindcss.com) |
-| Componentes de UI | [shadcn/ui](https://ui.shadcn.com) sobre [Radix UI](https://www.radix-ui.com) |
-| Formulários | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) |
-| Gráficos | [Recharts](https://recharts.org) |
-| Ícones | [Lucide React](https://lucide.dev) |
-| QR Code | [`qrcode`](https://www.npmjs.com/package/qrcode) |
-| Build / Dev server | [Vite](https://vitejs.dev) |
-| Linguagem | TypeScript (modo `strict`) |
-| Lint / Format | ESLint + Prettier |
+| Camada             | Tecnologia                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Framework          | [React 19](https://react.dev) + [TanStack Start](https://tanstack.com/start) (SSR, file-based routing) |
+| Roteamento         | [TanStack Router](https://tanstack.com/router)                                                         |
+| Dados assíncronos  | [TanStack Query](https://tanstack.com/query)                                                           |
+| Estilo             | [Tailwind CSS v4](https://tailwindcss.com)                                                             |
+| Componentes de UI  | [shadcn/ui](https://ui.shadcn.com) sobre [Radix UI](https://www.radix-ui.com)                          |
+| Formulários        | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev)                                |
+| Gráficos           | [Recharts](https://recharts.org)                                                                       |
+| Ícones             | [Lucide React](https://lucide.dev)                                                                     |
+| QR Code            | [`qrcode`](https://www.npmjs.com/package/qrcode)                                                       |
+| Build / Dev server | [Vite](https://vitejs.dev)                                                                             |
+| Linguagem          | TypeScript (modo `strict`)                                                                             |
+| Lint / Format      | ESLint + Prettier                                                                                      |
 
 > O projeto é gerenciado e sincronizado via [Lovable](https://lovable.dev) (ver `AGENTS.md`) — evite reescrever o histórico git de branches conectadas, pois isso desincroniza o editor do Lovable.
 
@@ -138,6 +144,7 @@ src/
 ## 🚀 Como rodar localmente
 
 ### Pré-requisitos
+
 - [Node.js](https://nodejs.org) 20+ (ou [Bun](https://bun.sh), já que o projeto tem `bun.lock`)
 
 ### Passo a passo
@@ -164,14 +171,14 @@ O sistema usa dados mockados (`src/data/mock`). Use o código de loja `KEEPSERV0
 
 ## 📜 Scripts disponíveis
 
-| Comando | Descrição |
-|---|---|
-| `npm run dev` | Inicia o servidor de desenvolvimento (porta 3000) |
-| `npm run build` | Gera o build de produção |
-| `npm run build:dev` | Gera build em modo desenvolvimento |
-| `npm run preview` | Faz preview local do build de produção |
-| `npm run lint` | Executa o ESLint |
-| `npm run format` | Formata o código com Prettier |
+| Comando             | Descrição                                         |
+| ------------------- | ------------------------------------------------- |
+| `npm run dev`       | Inicia o servidor de desenvolvimento (porta 3000) |
+| `npm run build`     | Gera o build de produção                          |
+| `npm run build:dev` | Gera build em modo desenvolvimento                |
+| `npm run preview`   | Faz preview local do build de produção            |
+| `npm run lint`      | Executa o ESLint                                  |
+| `npm run format`    | Formata o código com Prettier                     |
 
 ## 🗂️ Modelo de dados (domínio)
 
@@ -186,7 +193,8 @@ O sistema é organizado por domínios de negócio, cada um com `types.ts` (tipos
 
 ## 💾 Persistência de dados (mock)
 
-Esta é uma aplicação **front-end de demonstração**: não há back-end real nem banco de dados. Os dados (lojas, usuários, pedidos, cardápio, etc.) são seedados em `src/data/mock/` e mantidos em memória/`localStorage` do navegador via os *stores* em `src/state/` (chaves prefixadas com `keepserv_`, ex. `keepserv_session_v4`). Isso significa que:
+Esta é uma aplicação **front-end de demonstração**: não há back-end real nem banco de dados. Os dados (lojas, usuários, pedidos, cardápio, etc.) são seedados em `src/data/mock/` e mantidos em memória/`localStorage` do navegador via os _stores_ em `src/state/` (chaves prefixadas com `keepserv_`, ex. `keepserv_session_v4`). Isso significa que:
+
 - Os dados persistem entre recarregamentos da página no mesmo navegador;
 - Não há sincronização entre dispositivos ou usuários diferentes;
 - Limpar o `localStorage` do navegador reseta o sistema para o estado inicial (seed).

@@ -231,38 +231,41 @@ export function WaiterDashboard() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => navigate({ to: "/dashboard", search: { tab: "operacao" } })}
-            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary"
+            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary h-10 sm:h-9"
             title="Ir para a página de Operação Geral do Salão"
           >
-            <LayoutDashboard className="size-4" />
-            <span>Operação do Salão</span>
+            <LayoutDashboard className="size-4 shrink-0" />
+            <span className="truncate">Operação Salão</span>
           </Button>
           <Button
             variant="outline"
             onClick={() => setTableManagerOpen(true)}
-            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary font-medium"
+            className="gap-2 shadow-xs text-xs border-primary/30 hover:bg-primary/5 text-primary font-medium h-10 sm:h-9"
             title="Ajustar quantidade de mesas ou pausar/reativar mesas na operação"
           >
-            <Table2 className="size-4" />
-            <span>
-              Gerenciar Mesas ({activeTables.length}/{tables.length})
+            <Table2 className="size-4 shrink-0" />
+            <span className="truncate">
+              Mesas ({activeTables.length}/{tables.length})
             </span>
           </Button>
           <Button
             variant="outline"
             onClick={() => setFixedQrOpen(true)}
-            className="gap-2 shadow-xs text-xs"
+            className="gap-2 shadow-xs text-xs h-10 sm:h-9"
           >
-            <QrCode className="size-4" />
-            QR das Mesas
+            <QrCode className="size-4 shrink-0" />
+            <span className="truncate">QR das Mesas</span>
           </Button>
-          <Button onClick={() => setNewOrderOpen(true)} className="gap-2 shadow-xs">
+          <Button
+            onClick={() => setNewOrderOpen(true)}
+            className="col-span-2 sm:col-span-1 gap-2 shadow-xs h-11 sm:h-9 font-semibold justify-center bg-primary text-primary-foreground"
+          >
             <Plus className="size-4" />
-            Novo pedido
+            <span>Novo Pedido</span>
           </Button>
         </div>
       </div>
@@ -565,51 +568,54 @@ export function WaiterDashboard() {
               )}
             </div>
 
-            {/* Filtros rápidos */}
-            <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card p-1">
-              <Button
-                variant={tableFilter === "mine" ? "secondary" : "ghost"}
-                size="sm"
-                className="text-xs h-8"
-                onClick={() => setTableFilter("mine")}
-              >
-                Minhas mesas ({myOpenOrders.length})
-              </Button>
-              <Button
-                variant={tableFilter === "all" ? "secondary" : "ghost"}
-                size="sm"
-                className="text-xs h-8"
-                onClick={() => setTableFilter("all")}
-              >
-                Todas ({openOrders.length})
-              </Button>
-              <Button
-                variant={tableFilter === "ready" ? "secondary" : "ghost"}
-                size="sm"
-                className="text-xs h-8 text-amber-600 dark:text-amber-400"
-                onClick={() => setTableFilter("ready")}
-              >
-                Prontas ({readyOrders.length})
-              </Button>
-              <Button
-                variant={tableFilter === "bill" ? "secondary" : "ghost"}
-                size="sm"
-                className="text-xs h-8 text-emerald-600 dark:text-emerald-400"
-                onClick={() => setTableFilter("bill")}
-              >
-                Pagar ({openOrders.filter((o) => o.status === "entregue" || o.billPrinted).length})
-              </Button>
-              {cleanupOrders.length > 0 && (
+            {/* Filtros rápidos com rolagem horizontal suave no celular */}
+            <div className="w-full sm:w-auto overflow-x-auto no-scrollbar pb-0.5">
+              <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1 min-w-max">
                 <Button
-                  variant={tableFilter === "cleanup" ? "secondary" : "ghost"}
+                  variant={tableFilter === "mine" ? "secondary" : "ghost"}
                   size="sm"
-                  className="text-xs h-8 text-amber-600 dark:text-amber-400 font-semibold gap-1"
-                  onClick={() => setTableFilter("cleanup")}
+                  className="text-xs h-8"
+                  onClick={() => setTableFilter("mine")}
                 >
-                  <Sparkles className="size-3" />
-                  Limpeza ({cleanupOrders.length})
+                  Minhas mesas ({myOpenOrders.length})
                 </Button>
-              )}
+                <Button
+                  variant={tableFilter === "all" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setTableFilter("all")}
+                >
+                  Todas ({openOrders.length})
+                </Button>
+                <Button
+                  variant={tableFilter === "ready" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="text-xs h-8 text-amber-600 dark:text-amber-400"
+                  onClick={() => setTableFilter("ready")}
+                >
+                  Prontas ({readyOrders.length})
+                </Button>
+                <Button
+                  variant={tableFilter === "bill" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="text-xs h-8 text-emerald-600 dark:text-emerald-400"
+                  onClick={() => setTableFilter("bill")}
+                >
+                  Pagar ({openOrders.filter((o) => o.status === "entregue" || o.billPrinted).length}
+                  )
+                </Button>
+                {cleanupOrders.length > 0 && (
+                  <Button
+                    variant={tableFilter === "cleanup" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="text-xs h-8 text-amber-600 dark:text-amber-400 font-semibold gap-1"
+                    onClick={() => setTableFilter("cleanup")}
+                  >
+                    <Sparkles className="size-3" />
+                    Limpeza ({cleanupOrders.length})
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -911,6 +917,17 @@ export function WaiterDashboard() {
       <QRCodeModal order={qrOrder} onClose={() => setQrOrder(null)} />
       <FixedTableQRDialog open={fixedQrOpen} onClose={() => setFixedQrOpen(false)} />
       <TableManagementDialog open={tableManagerOpen} onOpenChange={setTableManagerOpen} />
+
+      {/* Botão Flutuante (FAB) de Novo Pedido no Celular */}
+      <button
+        type="button"
+        onClick={() => setNewOrderOpen(true)}
+        className="lg:hidden fixed bottom-18 right-4 z-30 flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-3 shadow-2xl active:scale-95 transition-transform font-bold text-xs border border-primary-foreground/20 safe-area-pb"
+        aria-label="Abrir novo pedido"
+      >
+        <Plus className="size-5 shrink-0" />
+        <span>Novo Pedido</span>
+      </button>
     </div>
   );
 }

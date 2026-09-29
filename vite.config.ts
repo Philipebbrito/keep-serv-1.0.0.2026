@@ -11,9 +11,9 @@ export default defineConfig({
     preset: "cloudflare-module",
   },
   vite: {
-  resolve: {
-    tsconfigPaths: true,
+    resolve: {
+      tsconfigPaths: true,
+    },
+    // ...
   },
-  // ...
-}
 });

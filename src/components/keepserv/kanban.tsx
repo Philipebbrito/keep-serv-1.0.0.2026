@@ -22,6 +22,10 @@ export function Kanban() {
   const [dragOver, setDragOver] = useState<OrderStatus | null>(null);
 
   const role = session?.role ?? "garcom";
+  const [mobileStatus, setMobileStatus] = useState<OrderStatus | "todos">(() =>
+    role === "cozinha" ? "preparo" : role === "garcom" ? "pronto" : "todos",
+  );
+
   const openOrder = orders.find((o) => o.id === openId) ?? null;
   const canPay = role === "garcom" || role === "caixa" || role === "gestor";
 
@@ -36,10 +40,60 @@ export function Kanban() {
       a.priority === b.priority ? a.statusChangedAt - b.statusChangedAt : a.priority ? -1 : 1,
     );
 
+  const activeMobileStatuses = mobileStatus === "todos" ? STATUS_ORDER : [mobileStatus];
+
   return (
     <>
+      {/* Barra de Filtro de Etapas para Mobile (Touch-friendly) */}
+      <div className="sm:hidden mb-4 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border min-w-max">
+          <button
+            type="button"
+            onClick={() => setMobileStatus("todos")}
+            className={cn(
+              "px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 min-h-[38px]",
+              mobileStatus === "todos"
+                ? "bg-background text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span>Todos</span>
+            <span className="bg-muted px-1.5 py-0.2 rounded-full text-[10px]">{orders.length}</span>
+          </button>
+          {STATUS_ORDER.map((status) => {
+            const count = orders.filter((o) => o.status === status).length;
+            const late = orders.filter(
+              (o) => o.status === status && urgencyFor(o, now) === "late",
+            ).length;
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setMobileStatus(status)}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 min-h-[38px]",
+                  mobileStatus === status
+                    ? "bg-background text-foreground shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className={cn("size-2 rounded-full", COLUMN_ACCENT[status])} />
+                <span>{STATUS_LABEL[status]}</span>
+                <span className="bg-muted px-1.5 py-0.2 rounded-full text-[10px]">{count}</span>
+                {late > 0 && (
+                  <span className="bg-rose-500 text-white px-1.5 py-0.2 rounded-full text-[9px] font-bold animate-pulse">
+                    {late}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STATUS_ORDER.map((status) => {
+          const isVisibleOnMobile = activeMobileStatuses.includes(status);
           const list = sortOrders(orders.filter((o) => o.status === status));
           const late = list.filter((o) => urgencyFor(o, now) === "late").length;
           return (
@@ -57,7 +111,8 @@ export function Kanban() {
                 setDragOver(null);
               }}
               className={cn(
-                "flex min-h-[60vh] flex-col rounded-2xl border border-border bg-surface/70 p-3 transition-colors",
+                "flex min-h-[40vh] sm:min-h-[60vh] flex-col rounded-2xl border border-border bg-surface/70 p-3 transition-colors",
+                !isVisibleOnMobile && "hidden sm:flex",
                 dragOver === status && "border-primary bg-primary/5",
               )}
             >

@@ -10,12 +10,14 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   QrCode,
   Receipt,
   Shield,
   Store,
+  Table2,
   UserCheck,
   Users,
   UtensilsCrossed,
@@ -114,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Redirecionamento por perfil e autenticação
   useEffect(() => {
     if (!session) {
-      navigate({ to: "/" });
+      navigate({ to: "/login" });
     } else if (session.nivel === "dev" && pathname !== "/dev/lojas") {
       navigate({ to: "/dev/lojas" });
     }
@@ -294,6 +296,148 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     return pathname === item.to;
   };
+
+  // Itens da barra de navegação móvel rápida (Dock inferior para celular)
+  const mobileDockItems = (() => {
+    if (isDev) {
+      return [
+        { label: "Lojas", to: "/dev/lojas", icon: Store },
+        { label: "Mais", action: "menu", icon: MoreHorizontal },
+      ];
+    }
+
+    if (isGarcom) {
+      return [
+        {
+          label: "Salão",
+          to: "/dashboard",
+          search: "?tab=operacao",
+          icon: Table2,
+          badge: occupiedTablesCount > 0 ? String(occupiedTablesCount) : null,
+        },
+        {
+          label: "Terminal",
+          to: "/dashboard",
+          search: "?tab=garcom",
+          icon: UserCheck,
+        },
+        {
+          label: "Pedidos",
+          to: "/pedidos",
+          icon: KanbanSquare,
+          badge:
+            activeOrders.filter((o) => o.status === "pronto").length > 0
+              ? String(activeOrders.filter((o) => o.status === "pronto").length)
+              : null,
+          badgeTone: "amber",
+        },
+        {
+          label: "Cardápio",
+          to: "/cardapio",
+          icon: UtensilsCrossed,
+        },
+        {
+          label: "Mais",
+          action: "menu",
+          icon: MoreHorizontal,
+        },
+      ];
+    }
+
+    if (session.role === "caixa") {
+      return [
+        {
+          label: "Caixa",
+          to: "/caixa",
+          icon: Receipt,
+        },
+        {
+          label: "Salão",
+          to: "/dashboard",
+          search: "?tab=operacao",
+          icon: Table2,
+          badge: occupiedTablesCount > 0 ? String(occupiedTablesCount) : null,
+        },
+        {
+          label: "Pedidos",
+          to: "/pedidos",
+          icon: KanbanSquare,
+        },
+        {
+          label: "Fluxo",
+          to: "/dashboard",
+          search: "?tab=fluxo_caixa",
+          icon: Wallet,
+        },
+        {
+          label: "Mais",
+          action: "menu",
+          icon: MoreHorizontal,
+        },
+      ];
+    }
+
+    if (session.role === "cozinha") {
+      return [
+        {
+          label: "KDS Cozinha",
+          to: "/pedidos",
+          icon: KanbanSquare,
+          badge: activeOrders.length > 0 ? String(activeOrders.length) : null,
+        },
+        {
+          label: "Cardápio",
+          to: "/cardapio",
+          icon: UtensilsCrossed,
+        },
+        {
+          label: "Salão",
+          to: "/dashboard",
+          search: "?tab=operacao",
+          icon: Table2,
+        },
+        {
+          label: "Mais",
+          action: "menu",
+          icon: MoreHorizontal,
+        },
+      ];
+    }
+
+    // Gestor / Dono da Loja
+    const lateCount = activeOrders.filter((o) => urgencyFor(o, Date.now()) === "late").length;
+    return [
+      {
+        label: "Salão",
+        to: "/dashboard",
+        search: "?tab=operacao",
+        icon: Table2,
+        badge: occupiedTablesCount > 0 ? String(occupiedTablesCount) : null,
+      },
+      {
+        label: "Painel",
+        to: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        label: "Pedidos",
+        to: "/pedidos",
+        icon: KanbanSquare,
+        badge: lateCount > 0 ? String(lateCount) : null,
+        badgeTone: "rose",
+      },
+      {
+        label: "Caixa",
+        to: "/caixa",
+        icon: Receipt,
+      },
+      {
+        label: "Mais",
+        action: "menu",
+        icon: MoreHorizontal,
+      },
+    ];
+  })();
 
   // Título e ícone da seção atual para o Breadcrumb do Top Header
   const getCurrentSectionInfo = () => {
@@ -548,34 +692,43 @@ export function AppShell({ children }: { children: ReactNode }) {
             </TooltipContent>
           </Tooltip>
         ) : (
-          <div className="flex items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 p-2.5">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xs border border-primary/20">
-              {userInitials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-foreground leading-tight">
-                {session.name}
-              </p>
-              <div className="flex items-center gap-1 mt-1 flex-wrap">
-                {session.nivel === "dev" && (
-                  <Badge className="bg-purple-600 text-white text-[9px] px-1.5 py-0">🛠️ Dev</Badge>
-                )}
-                {(session.nivel === "gestor" || session.nivel === "dono_loja") && (
-                  <Badge className="bg-indigo-600 text-white text-[9px] px-1.5 py-0">
-                    👑 Gestor
-                  </Badge>
-                )}
-                {session.nivel === "colaborador" && (
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground">
-                    {ROLE_LABEL[session.role]}
-                  </Badge>
-                )}
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/40 p-2.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xs border border-primary/20">
+                {userInitials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-foreground leading-tight">
+                  {session.name}
+                </p>
+                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                  {session.nivel === "dev" && (
+                    <Badge className="bg-purple-600 text-white text-[9px] px-1.5 py-0">🛠️ Dev</Badge>
+                  )}
+                  {(session.nivel === "gestor" || session.nivel === "dono_loja") && (
+                    <Badge className="bg-indigo-600 text-white text-[9px] px-1.5 py-0">
+                      👑 Gestor
+                    </Badge>
+                  )}
+                  {session.nivel === "colaborador" && (
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground">
+                      {ROLE_LABEL[session.role]}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={logout}
+              title="Sair do sistema"
+            >
+              <LogOut className="size-4" />
+            </Button>
           </div>
         )}
-
-        {/* No modo colapsado, botão de logout individual */}
       </div>
     </div>
   );
@@ -608,7 +761,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             {/* Painel do Drawer */}
             <div className="relative flex w-72 flex-col bg-card border-r border-border h-full shadow-2xl z-10 animate-in slide-in-from-left duration-250">
-              <div className="absolute top-3 right-3">
+              <div className="absolute top-3 right-3 z-20">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -627,7 +780,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* ========================================================= */}
         {/* ÁREA PRINCIPAL: TOP HEADER + CONTEÚDO (MAIN)             */}
         {/* ========================================================= */}
-        <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex flex-1 flex-col min-w-0 pb-16 lg:pb-0">
           {/* Barra Superior Integrada */}
           <header className="sticky top-0 z-20 h-15 border-b border-border/80 bg-background/85 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3">
             {/* Lado Esquerdo: Toggle Lateral & Breadcrumb Contextual */}
@@ -706,45 +859,78 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               )}
 
-              {/* Perfil Compacto no Header */}
-              <div className="hidden sm:flex items-center gap-2 pl-1 border-l border-border/60">
-                <div className="text-right leading-tight">
-                  <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">
-                    {session.name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {session.nivel === "dev"
-                      ? "Dev Super Admin"
-                      : isGestor
-                        ? "Gestor"
-                        : ROLE_LABEL[session.role]}
-                  </p>
-                </div>
-                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs border border-primary/20">
-                  {userInitials}
-                </div>
-              </div>
-
-              {/* Botão de Logout rápido */}
+              {/* Botão de Logout Rápido no Header */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-9 text-muted-foreground hover:text-destructive"
-                aria-label="Sair do sistema"
-                onClick={() => {
-                  logout();
-                  navigate({ to: "/" });
-                }}
-                title="Sair da conta"
+                onClick={logout}
+                className="size-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                title="Sair do sistema"
               >
                 <LogOut className="size-4" />
               </Button>
             </div>
           </header>
 
-          {/* Conteúdo Dinâmico da Rota */}
-          <main className="flex-1 w-full">{children}</main>
+          {/* Conteúdo Principal */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
         </div>
+
+        {/* ========================================================= */}
+        {/* DOCK INFERIOR MOBILE (BARRA DE NAVEGAÇÃO RÁPIDA FIXA)      */}
+        {/* ========================================================= */}
+        <nav className="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-md border-t border-border lg:hidden flex items-center justify-around px-2 py-1.5">
+          {mobileDockItems.map((item, idx) => {
+            const Icon = item.icon;
+            if (item.action === "menu") {
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setIsMobileOpen(true)}
+                  className="flex flex-col items-center justify-center py-1 px-3 text-muted-foreground hover:text-foreground"
+                >
+                  <Icon className="size-5" />
+                  <span className="text-[10px] font-medium mt-1">{item.label}</span>
+                </button>
+              );
+            }
+
+            const active = item.to ? pathname === item.to : false;
+
+            return (
+              <Link
+                key={idx}
+                to={item.to!}
+                search={
+                  item.search
+                    ? ({ tab: item.search.replace("?tab=", "") } as Record<string, string>)
+                    : undefined
+                }
+                className={cn(
+                  "relative flex flex-col items-center justify-center py-1 px-3 rounded-lg transition-colors",
+                  active ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="size-5" />
+                <span className="text-[10px] font-medium mt-1">{item.label}</span>
+                {item.badge && (
+                  <span
+                    className={cn(
+                      "absolute top-0 right-2 flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white",
+                      item.badgeTone === "rose"
+                        ? "bg-rose-500"
+                        : item.badgeTone === "amber"
+                          ? "bg-amber-500"
+                          : "bg-primary",
+                    )}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </TooltipProvider>
   );

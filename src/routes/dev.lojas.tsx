@@ -168,7 +168,7 @@ function DevLojasPage() {
   useEffect(() => {
     if (!session) {
       toast.error("Acesso restrito: faça login com sua conta de Desenvolvedor.");
-      const t = setTimeout(() => navigate({ to: "/" }), 1200);
+      const t = setTimeout(() => navigate({ to: "/login" }), 1200);
       return () => clearTimeout(t);
     }
 
@@ -497,7 +497,7 @@ function DevLojasPage() {
               size="sm"
               onClick={() => {
                 logout();
-                navigate({ to: "/" });
+                navigate({ to: "/login" });
               }}
               className="gap-1.5 text-xs"
             >

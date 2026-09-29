@@ -31,7 +31,7 @@ function EquipePage() {
   useEffect(() => {
     if (!session) {
       toast.error("Acesso restrito: faça login para acessar o painel da equipe.");
-      const t = setTimeout(() => navigate({ to: "/" }), 1200);
+      const t = setTimeout(() => navigate({ to: "/login" }), 1200);
       return () => clearTimeout(t);
     }
 

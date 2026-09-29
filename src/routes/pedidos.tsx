@@ -59,20 +59,23 @@ function PedidosPage() {
           <h1 className="font-display text-3xl font-semibold">Quadro de pedidos</h1>
           <p className="mt-1 text-sm text-muted-foreground">{ROLE_HINT[session.role]}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {canCreateOrder && (
-            <Button onClick={() => setNewOrderOpen(true)} className="gap-2">
+            <Button
+              onClick={() => setNewOrderOpen(true)}
+              className="col-span-2 sm:col-span-1 h-11 sm:h-9 font-semibold justify-center gap-2 bg-primary text-primary-foreground shadow-xs"
+            >
               <Plus className="size-4" />
               Novo pedido
             </Button>
           )}
-          <div className="card-elevated px-4 py-2.5">
-            <p className="text-xs text-muted-foreground">Pedidos ativos</p>
-            <p className="font-display text-xl font-semibold tabular-nums">{active}</p>
+          <div className="card-elevated px-3 sm:px-4 py-2 sm:py-2.5">
+            <p className="text-[11px] sm:text-xs text-muted-foreground">Pedidos ativos</p>
+            <p className="font-display text-lg sm:text-xl font-semibold tabular-nums">{active}</p>
           </div>
-          <div className="card-elevated border-l-4 border-l-late px-4 py-2.5">
-            <p className="text-xs text-muted-foreground">Em atraso</p>
-            <p className="font-display text-xl font-semibold text-late-foreground tabular-nums">
+          <div className="card-elevated border-l-4 border-l-late px-3 sm:px-4 py-2 sm:py-2.5">
+            <p className="text-[11px] sm:text-xs text-muted-foreground">Em atraso</p>
+            <p className="font-display text-lg sm:text-xl font-semibold text-late-foreground tabular-nums">
               {late}
             </p>
           </div>

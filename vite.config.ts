@@ -4,14 +4,14 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
     prerender: {
-      enabled: true,
-      crawlLinks: true,
+      enabled: false, // Desativa o pré-render estático em tempo de build para evitar falhas no SSR crawl
     },
   },
   nitro: {
+    preset: "cloudflare-pages",
     output: {
       dir: "dist",
-      publicDir: "dist",
+      publicDir: "dist/client",
       serverDir: "dist/server",
     },
   },
